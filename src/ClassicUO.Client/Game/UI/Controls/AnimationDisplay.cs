@@ -1,5 +1,6 @@
 using System;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 
@@ -10,7 +11,7 @@ public class AnimationDisplay : Control
     private ushort _graphic;
     public ushort Graphic => _graphic;
 
-    private readonly uint _playspeedMs;
+    private readonly uint _playSpeedMs;
 
     private ulong _nextFrame = 0;
 
@@ -24,12 +25,12 @@ public class AnimationDisplay : Control
     private Vector3 _hueVector;
     public bool DrawBorder { get; set; }
 
-    public AnimationDisplay(ushort graphic, int width = 100, int height = 100, uint playspeedMs = 650)
+    public AnimationDisplay(ushort graphic, int width = 100, int height = 100, uint playSpeedMs = 650)
     {
         _mWidth = width;
         _mHeight = height;
         UpdateGraphic(graphic);
-        _playspeedMs = playspeedMs;
+        _playSpeedMs = playSpeedMs;
         Width = width;
         Height = height;
     }
@@ -68,14 +69,14 @@ public class AnimationDisplay : Control
 
         if (_nextFrame <= Time.Ticks)
         {
-            _nextFrame = Time.Ticks + _playspeedMs;
+            _nextFrame = Time.Ticks + _playSpeedMs;
             _lastFrame++;
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        base.Draw(batcher, x, y);
+        base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
         Span<SpriteInfo> frames = Client.Game.UO.Animations.GetAnimationFrames(_graphic, _animGroup, 1, out ushort hue2, out _, true);
 
@@ -85,13 +86,20 @@ public class AnimationDisplay : Control
         if (_lastFrame >= frames.Length)
             _lastFrame = 0;
 
-        ref SpriteInfo spriteInfo = ref frames[_lastFrame];
+        SpriteInfo spriteInfo = frames[_lastFrame];
 
-        if (spriteInfo.Texture != null)
-            batcher.Draw(spriteInfo.Texture, new Rectangle(x, y, Math.Min(spriteInfo.UV.Width, _mWidth), Math.Min(spriteInfo.UV.Height, _mHeight)), spriteInfo.UV, _hueVector);
+        float depth = layerDepth;
 
-        if (DrawBorder)
-            batcher.DrawRectangle(SolidColorTextureCache.GetTexture(Color.Gray), x, y, Width - 1, Height - 1, ShaderHueTranslator.GetHueVector(0, false, Alpha));
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            if (spriteInfo.Texture != null)
+                batcher.Draw(spriteInfo.Texture, new Rectangle(x, y, Math.Min(spriteInfo.UV.Width, _mWidth), Math.Min(spriteInfo.UV.Height, _mHeight)), spriteInfo.UV, _hueVector, depth);
+
+            if (DrawBorder)
+                batcher.DrawRectangle(SolidColorTextureCache.GetTexture(Color.Gray), x, y, Width - 1, Height - 1, ShaderHueTranslator.GetHueVector(0, false, Alpha), depth);
+
+            return true;
+        });
 
         return true;
     }
