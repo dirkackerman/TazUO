@@ -21,7 +21,7 @@ namespace ClassicUO.Game.Managers
         public event EventHandler<JournalEntry> EntryAdded;
 
 
-        public void Add(string text, ushort hue, string name, TextType type, bool isunicode = true, MessageType messageType = MessageType.Regular)
+        public void Add(string text, ushort hue, string name, uint? serial, TextType type, bool isunicode = true, MessageType messageType = MessageType.Regular)
         {
             if (JournalFilterManager.Instance.IgnoreMessage(text))
                 return;

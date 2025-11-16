@@ -1,32 +1,35 @@
 ﻿// SPDX-License-Identifier: BSD-2-Clause
 
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class ScissorControl : Control
 {
-    public class ScissorControl : Control
+    public ScissorControl(bool enabled, int x, int y, int width, int height) : this(enabled)
     {
-        public ScissorControl(bool enabled, int x, int y, int width, int height) : this(enabled)
-        {
-            X = x;
-            Y = y;
-            Width = width;
-            Height = height;
-        }
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
 
-        public ScissorControl(bool enabled)
-        {
-            CanMove = false;
-            AcceptMouseInput = false;
-            AcceptKeyboardInput = false;
-            Alpha = 1.0f;
-            WantUpdateSize = false;
-            DoScissor = enabled;
-        }
+    public ScissorControl(bool enabled)
+    {
+        CanMove = false;
+        AcceptMouseInput = false;
+        AcceptKeyboardInput = false;
+        Alpha = 1.0f;
+        WantUpdateSize = false;
+        DoScissor = enabled;
+    }
 
-        public bool DoScissor;
+    public bool DoScissor;
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        bool clipIt(Renderer.UltimaBatcher2D batcher)
         {
             if (DoScissor)
             {
@@ -36,8 +39,12 @@ namespace ClassicUO.Game.UI.Controls
             {
                 batcher.ClipEnd();
             }
-
             return true;
         }
+
+        renderLists.AddGumpWithAtlas(clipIt);
+        renderLists.AddGumpNoAtlas(clipIt);
+
+        return true;
     }
 }

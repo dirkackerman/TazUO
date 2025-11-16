@@ -8,6 +8,7 @@ using ClassicUO.Game.GameObjects;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Input;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Network;
 using ClassicUO.Renderer;
 using ClassicUO.Resources;
@@ -193,9 +194,7 @@ namespace ClassicUO.Game.UI.Gumps
                 Add(_playerGoldLabel);
             }
             else
-            {
                 _totalLabel.X = (rightTop.X + rightTop.Width) - RIGHT_OFFSET * 3;
-            }
 
             _expander = new Button(2, 0x082E, 0x82F)
             {
@@ -359,18 +358,12 @@ namespace ClassicUO.Game.UI.Gumps
 
         public void SetNameTo(Item item, string name)
         {
-            if (!string.IsNullOrEmpty(name) && _shopItems.TryGetValue(item, out ShopItem shopItem))
-            {
-                shopItem.SetName(name, false);
-            }
+            if (!string.IsNullOrEmpty(name) && _shopItems.TryGetValue(item, out ShopItem shopItem)) shopItem.SetName(name, false);
         }
 
         public override void Update()
         {
-            if (!World.InGame || IsDisposed)
-            {
-                return;
-            }
+            if (!World.InGame || IsDisposed) return;
 
             int steps = Mouse.LDragOffset.Y;
 
@@ -379,24 +372,14 @@ namespace ClassicUO.Game.UI.Gumps
                 _leftMiddle.Height = _initialHeight + steps;
 
                 if (_leftMiddle.Height < _minHeight)
-                {
                     _leftMiddle.Height = _minHeight;
-                }
-                else if (_leftMiddle.Height > 640)
-                {
-                    _leftMiddle.Height = 640;
-                }
+                else if (_leftMiddle.Height > 640) _leftMiddle.Height = 640;
 
                 _rightMiddle.Height = _initialHeightRight + steps;
 
                 if (_rightMiddle.Height < _minHeightRight)
-                {
                     _rightMiddle.Height = _minHeightRight;
-                }
-                else if (_rightMiddle.Height > 640 - LEFT_TOP_HEIGHT)
-                {
-                    _rightMiddle.Height = 640 - LEFT_TOP_HEIGHT;
-                }
+                else if (_rightMiddle.Height > 640 - LEFT_TOP_HEIGHT) _rightMiddle.Height = 640 - LEFT_TOP_HEIGHT;
 
                 ProfileManager.CurrentProfile.VendorGumpHeight = _leftMiddle.Height;
 
@@ -413,47 +396,30 @@ namespace ClassicUO.Game.UI.Gumps
                 _leftDown.Y = _leftBottom.Y;
                 _rightDown.Y = _rightBottom.Y;
 
-                if (_playerGoldLabel != null)
-                {
-                    _playerGoldLabel.Y = _totalLabel.Y;
-                }
+                if (_playerGoldLabel != null) _playerGoldLabel.Y = _totalLabel.Y;
 
                 _transactionDataBox.ReArrangeChildren();
                 WantUpdateSize = true;
             }
 
-            if (_shopItems.Count == 0)
-            {
-                Dispose();
-            }
+            if (_shopItems.Count == 0) Dispose();
 
-            if (_buttonScroll != ButtonScroll.None)
-            {
-                ProcessListScroll();
-            }
+            if (_buttonScroll != ButtonScroll.None) ProcessListScroll();
 
             if (_updateTotal)
             {
                 long sum = 0;
 
-                foreach (TransactionItem t in _transactionItems.Values)
-                {
-                    sum += t.Amount * t.Price;
-                }
+                foreach (TransactionItem t in _transactionItems.Values) sum += t.Amount * t.Price;
 
                 _totalLabel.Text = sum.ToString();
                 _updateTotal = false;
             }
 
-            if (_playerGoldLabel != null)
-            {
-                _playerGoldLabel.Text = World.Player.Gold.ToString();
-            }
+            if (_playerGoldLabel != null) _playerGoldLabel.Text = World.Player.Gold.ToString();
 
             base.Update();
         }
-
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y) => base.Draw(batcher, x, y);
 
         private void ProcessListScroll()
         {
@@ -482,10 +448,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
             var shopItem = (ShopItem)sender;
 
-            if (shopItem.Amount <= 0)
-            {
-                return;
-            }
+            if (shopItem.Amount <= 0) return;
 
             int total = Keyboard.Shift ? shopItem.Amount : 1;
 
@@ -495,9 +458,7 @@ namespace ClassicUO.Game.UI.Gumps
                     out TransactionItem transactionItem
                 )
             )
-            {
                 transactionItem.Amount += total;
-            }
             else
             {
                 transactionItem = new TransactionItem(
@@ -534,10 +495,7 @@ namespace ClassicUO.Game.UI.Gumps
                 transactionItem.Amount -= total;
             }
 
-            if (transactionItem.Amount <= 0)
-            {
-                RemoveTransactionItem(transactionItem);
-            }
+            if (transactionItem.Amount <= 0) RemoveTransactionItem(transactionItem);
 
             _updateTotal = true;
         }
@@ -576,9 +534,7 @@ namespace ClassicUO.Game.UI.Gumps
                     .SelectMany(o => o.Children)
                     .OfType<ShopItem>()
             )
-            {
                 shopItem.IsSelected = shopItem == sender;
-            }
         }
 
         public override void OnButtonClick(int buttonID)
@@ -591,13 +547,9 @@ namespace ClassicUO.Game.UI.Gumps
                         .ToArray();
 
                     if (IsBuyGump)
-                    {
                         AsyncNetClient.Socket.Send_BuyRequest(LocalSerial, items);
-                    }
                     else
-                    {
                         AsyncNetClient.Socket.Send_SellRequest(LocalSerial, items);
-                    }
 
                     Dispose();
 
@@ -605,10 +557,7 @@ namespace ClassicUO.Game.UI.Gumps
 
                 case Buttons.Clear:
 
-                    foreach (TransactionItem t in _transactionItems.Values.ToList())
-                    {
-                        RemoveTransactionItem(t);
-                    }
+                    foreach (TransactionItem t in _transactionItems.Values.ToList()) RemoveTransactionItem(t);
 
                     break;
             }
@@ -650,10 +599,7 @@ namespace ClassicUO.Game.UI.Gumps
 
                 string itemName = StringHelper.CapitalizeAllWords(Name);
 
-                if (!SerialHelper.IsValid(serial))
-                {
-                    return;
-                }
+                if (!SerialHelper.IsValid(serial)) return;
 
                 string subname = string.Format(ResGumps.Item0Price1, itemName, Price);
 
@@ -676,10 +622,7 @@ namespace ClassicUO.Game.UI.Gumps
 
                 int height = Math.Max(_name.Height, 35) + 10;
 
-                if (SerialHelper.IsItem(serial))
-                {
-                    height = Math.Max(Client.Game.UO.FileManager.TileData.StaticData[graphic].Height, height);
-                }
+                if (SerialHelper.IsItem(serial)) height = Math.Max(Client.Game.UO.FileManager.TileData.StaticData[graphic].Height, height);
 
                 Add(
                     _amountLabel = new Label(
@@ -702,10 +645,7 @@ namespace ClassicUO.Game.UI.Gumps
 
                 WantUpdateSize = false;
 
-                if (_gump.World.ClientFeatures.TooltipsEnabled)
-                {
-                    SetTooltip(LocalSerial);
-                }
+                if (_gump.World.ClientFeatures.TooltipsEnabled) SetTooltip(LocalSerial);
 
                 Amount = count;
             }
@@ -722,10 +662,7 @@ namespace ClassicUO.Game.UI.Gumps
             {
                 set
                 {
-                    foreach (Label label in Children.OfType<Label>())
-                    {
-                        label.Hue = (ushort)(value ? 0x0021 : 0x0219);
-                    }
+                    foreach (Label label in Children.OfType<Label>()) label.Hue = (ushort)(value ? 0x0021 : 0x0219);
                 }
             }
 
@@ -766,8 +703,9 @@ namespace ClassicUO.Game.UI.Gumps
 
             protected override bool OnMouseDoubleClick(int x, int y, MouseButtonType button) => true;
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+           public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
+                float layerDepth = layerDepthRef;
                 Vector3 hueVector;
 
                 if (InBuyGump && SerialHelper.IsMobile(LocalSerial))
@@ -775,10 +713,7 @@ namespace ClassicUO.Game.UI.Gumps
                     Animations animations = Client.Game.UO.Animations;
                     ushort graphic = Graphic;
 
-                    if (graphic >= animations.MaxAnimationCount)
-                    {
-                        graphic = 0;
-                    }
+                    if (graphic >= animations.MaxAnimationCount) graphic = 0;
 
                     byte group = GetAnimGroup(animations, graphic);
 
@@ -801,18 +736,28 @@ namespace ClassicUO.Game.UI.Gumps
 
                         ref SpriteInfo spriteInfo = ref frames[0];
 
-                        if (spriteInfo.Texture != null)
+                        Texture2D texture = spriteInfo.Texture;
+                        if (texture != null)
                         {
-                            batcher.Draw(
-                                spriteInfo.Texture,
-                                new Rectangle(
-                                    x - 3,
-                                    y + 5 + 15,
-                                    Math.Min(spriteInfo.UV.Width, 45),
-                                    Math.Min(spriteInfo.UV.Height, 45)
-                                ),
-                                spriteInfo.UV,
-                                hueVector
+                            Rectangle sourceRectangle = spriteInfo.UV;
+                            renderLists.AddGumpWithAtlas
+                            (
+                                (batcher) =>
+                                {
+                                    batcher.Draw(
+                                        texture,
+                                        new Rectangle(
+                                            x - 3,
+                                            y + 5 + 15,
+                                            Math.Min(sourceRectangle.Width, 45),
+                                            Math.Min(sourceRectangle.Height, 45)
+                                        ),
+                                        sourceRectangle,
+                                        hueVector,
+                                        layerDepth
+                                    );
+                                    return true;
+                                }
                             );
                         }
                     }
@@ -820,53 +765,60 @@ namespace ClassicUO.Game.UI.Gumps
                 else
                 {
                     ref readonly SpriteInfo artInfo = ref Client.Game.UO.Arts.GetArt(Graphic);
-                    if (artInfo.Texture != null)
+                    hueVector = ShaderHueTranslator.GetHueVector(
+                        Hue,
+                        Client.Game.UO.FileManager.TileData.StaticData[Graphic].IsPartialHue,
+                        1f
+                    );
+
+                    Rectangle rect = Client.Game.UO.Arts.GetRealArtBounds(Graphic);
+
+                    const int RECT_SIZE = 50;
+
+                    var originalSize = new Point(RECT_SIZE, Height);
+                    var point = new Point();
+
+                    if (rect.Width < RECT_SIZE)
                     {
-                        hueVector = ShaderHueTranslator.GetHueVector(
-                            Hue,
-                            Client.Game.UO.FileManager.TileData.StaticData[Graphic].IsPartialHue,
-                            1f
-                        );
-
-                        Rectangle rect = Client.Game.UO.Arts.GetRealArtBounds(Graphic);
-
-                        const int RECT_SIZE = 50;
-
-                        var originalSize = new Point(RECT_SIZE, Height);
-                        var point = new Point();
-
-                        if (rect.Width < RECT_SIZE)
-                        {
-                            originalSize.X = rect.Width;
-                            point.X = (RECT_SIZE >> 1) - (originalSize.X >> 1);
-                        }
-
-                        if (rect.Height < Height)
-                        {
-                            originalSize.Y = rect.Height;
-                            point.Y = (Height >> 1) - (originalSize.Y >> 1);
-                        }
-
-                        batcher.Draw(
-                            artInfo.Texture,
-                            new Rectangle(
-                                x + point.X - 5,
-                                y + point.Y + 10,
-                                originalSize.X,
-                                originalSize.Y
-                            ),
-                            new Rectangle(
-                                artInfo.UV.X + rect.X,
-                                artInfo.UV.Y + rect.Y,
-                                rect.Width,
-                                rect.Height
-                            ),
-                            hueVector
-                        );
+                        originalSize.X = rect.Width;
+                        point.X = (RECT_SIZE >> 1) - (originalSize.X >> 1);
                     }
+
+                    if (rect.Height < Height)
+                    {
+                        originalSize.Y = rect.Height;
+                        point.Y = (Height >> 1) - (originalSize.Y >> 1);
+                    }
+
+                    Texture2D texture = artInfo.Texture;
+                    Rectangle sourceRectangle = artInfo.UV;
+                    renderLists.AddGumpWithAtlas
+                    (
+                        (batcher) =>
+                        {
+                            batcher.Draw(
+                                texture,
+                                new Rectangle(
+                                    x + point.X - 5,
+                                    y + point.Y + 10,
+                                    originalSize.X,
+                                    originalSize.Y
+                                ),
+                                new Rectangle(
+                                    sourceRectangle.X + rect.X,
+                                    sourceRectangle.Y + rect.Y,
+                                    rect.Width,
+                                    rect.Height
+                                ),
+                                hueVector,
+                                layerDepth
+                            );
+                            return true;
+                        }
+                    );
                 }
 
-                return base.Draw(batcher, x, y);
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
             }
         }
 
@@ -944,27 +896,19 @@ namespace ClassicUO.Game.UI.Gumps
                 buttonAdd.MouseOver += (sender, e) =>
                 {
                     if (status == 2)
-                    {
                         if (pressedAdd && Time.Ticks > t0)
                         {
                             t0 = Time.Ticks + (increm - _StepChanger);
                             OnButtonClick(0);
                             _StepsDone++;
 
-                            if (_StepChanger < increm && _StepsDone % 3 == 0)
-                            {
-                                _StepChanger += 2;
-                            }
+                            if (_StepChanger < increm && _StepsDone % 3 == 0) _StepChanger += 2;
                         }
-                    }
                 };
 
                 buttonAdd.MouseDown += (sender, e) =>
                 {
-                    if (e.Button != MouseButtonType.Left)
-                    {
-                        return;
-                    }
+                    if (e.Button != MouseButtonType.Left) return;
 
                     pressedAdd = true;
                     _StepChanger = 0;
@@ -997,27 +941,19 @@ namespace ClassicUO.Game.UI.Gumps
                 buttonRemove.MouseOver += (sender, e) =>
                 {
                     if (status == 2)
-                    {
                         if (pressedRemove && Time.Ticks > t0)
                         {
                             t0 = Time.Ticks + (increm - _StepChanger);
                             OnButtonClick(1);
                             _StepsDone++;
 
-                            if (_StepChanger < increm && _StepsDone % 3 == 0)
-                            {
-                                _StepChanger += 2;
-                            }
+                            if (_StepChanger < increm && _StepsDone % 3 == 0) _StepChanger += 2;
                         }
-                    }
                 };
 
                 buttonRemove.MouseDown += (sender, e) =>
                 {
-                    if (e.Button != MouseButtonType.Left)
-                    {
-                        return;
-                    }
+                    if (e.Button != MouseButtonType.Left) return;
 
                     pressedRemove = true;
                     _StepChanger = 0;
@@ -1090,33 +1026,42 @@ namespace ClassicUO.Game.UI.Gumps
                 );
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
-                ref readonly SpriteInfo gumpInfo0 = ref Client.Game.UO.Gumps.GetGump(_graphic);
-                ref readonly SpriteInfo gumpInfo1 = ref Client.Game.UO.Gumps.GetGump((uint)(_graphic + 1));
-                ref readonly SpriteInfo gumpInfo2 = ref Client.Game.UO.Gumps.GetGump((uint)(_graphic + 2));
+                float layerDepth = layerDepthRef;
+                renderLists.AddGumpWithAtlas
+                (
+                    batcher =>
+                    {
+                        ref readonly SpriteInfo gumpInfo0 = ref Client.Game.UO.Gumps.GetGump(_graphic);
+                        ref readonly SpriteInfo gumpInfo1 = ref Client.Game.UO.Gumps.GetGump((uint)(_graphic + 1));
+                        ref readonly SpriteInfo gumpInfo2 = ref Client.Game.UO.Gumps.GetGump((uint)(_graphic + 2));
 
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha, true);
+                        Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha, true);
 
-                int middleWidth = Width - gumpInfo0.UV.Width - gumpInfo2.UV.Width;
+                        int middleWidth = Width - gumpInfo0.UV.Width - gumpInfo2.UV.Width;
 
-                batcher.Draw(gumpInfo0.Texture, new Vector2(x, y), gumpInfo0.UV, hueVector);
+                        batcher.Draw(gumpInfo0.Texture, new Vector2(x, y), gumpInfo0.UV, hueVector, layerDepth);
 
-                batcher.DrawTiled(
-                    gumpInfo1.Texture,
-                    new Rectangle(x + gumpInfo0.UV.Width, y, middleWidth, gumpInfo1.UV.Height),
-                    gumpInfo1.UV,
-                    hueVector
+                        batcher.DrawTiled(
+                            gumpInfo1.Texture,
+                            new Rectangle(x + gumpInfo0.UV.Width, y, middleWidth, gumpInfo1.UV.Height),
+                            gumpInfo1.UV,
+                            hueVector,
+                            layerDepth
+                        );
+
+                        batcher.Draw(
+                            gumpInfo2.Texture,
+                            new Vector2(x + Width - gumpInfo2.UV.Width, y),
+                            gumpInfo2.UV,
+                            hueVector,
+                            layerDepth
+                        );
+                        return true;
+                    }
                 );
-
-                batcher.Draw(
-                    gumpInfo2.Texture,
-                    new Vector2(x + Width - gumpInfo2.UV.Width, y),
-                    gumpInfo2.UV,
-                    hueVector
-                );
-
-                return base.Draw(batcher, x, y);
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
             }
         }
 
@@ -1141,41 +1086,44 @@ namespace ClassicUO.Game.UI.Gumps
                 _tiled = tiled;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
+                float layerDepth = layerDepthRef;
                 SpriteInfo gumpInfo = Client.Game.UO.Gumps.GetGump(_graphic);
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-                if (_tiled)
+                renderLists.AddGumpWithAtlas(batcher =>
                 {
-                    batcher.DrawTiled(
-                        gumpInfo.Texture,
-                        new Rectangle(x, y, Width, Height),
-                        new Rectangle(
-                            gumpInfo.UV.X + _rect.X,
-                            gumpInfo.UV.Y + _rect.Y,
-                            _rect.Width,
-                            _rect.Height
-                        ),
-                        hueVector
-                    );
-                }
-                else
-                {
-                    batcher.Draw(
-                        gumpInfo.Texture,
-                        new Rectangle(x, y, Width, Height),
-                        new Rectangle(
-                            gumpInfo.UV.X + _rect.X,
-                            gumpInfo.UV.Y + _rect.Y,
-                            _rect.Width,
-                            _rect.Height
-                        ),
-                        hueVector
-                    );
-                }
+                    if (_tiled)
+                        batcher.DrawTiled(
+                            gumpInfo.Texture,
+                            new Rectangle(x, y, Width, Height),
+                            new Rectangle(
+                                gumpInfo.UV.X + _rect.X,
+                                gumpInfo.UV.Y + _rect.Y,
+                                _rect.Width,
+                                _rect.Height
+                            ),
+                            hueVector,
+                            layerDepth
+                        );
+                    else
+                        batcher.Draw(
+                            gumpInfo.Texture,
+                            new Rectangle(x, y, Width, Height),
+                            new Rectangle(
+                                gumpInfo.UV.X + _rect.X,
+                                gumpInfo.UV.Y + _rect.Y,
+                                _rect.Width,
+                                _rect.Height
+                            ),
+                            hueVector,
+                            layerDepth
+                        );
+                    return true;
+                });
 
-                return base.Draw(batcher, x, y);
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
             }
         }
     }

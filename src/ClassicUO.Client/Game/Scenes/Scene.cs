@@ -31,8 +31,11 @@ namespace ClassicUO.Game.Scenes
 
         public virtual void Update() => Camera.Update(true, Time.Delta, Mouse.Position);
 
-        public virtual bool Draw(UltimaBatcher2D batcher) => true;
+        public virtual bool Draw(UltimaBatcher2D batcher, RenderTargets renderTargets) => true;
 
+        public virtual void DrawUI(UltimaBatcher2D batcher)
+        {
+        }
 
         public virtual void Load() => IsLoaded = true;
 

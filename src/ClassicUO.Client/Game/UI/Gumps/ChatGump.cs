@@ -5,6 +5,7 @@ using ClassicUO.Game.Managers;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Input;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Network;
 using ClassicUO.Renderer;
 using ClassicUO.Resources;
@@ -217,10 +218,7 @@ namespace ClassicUO.Game.UI.Gumps
             switch (buttonID)
             {
                 case 0: // join
-                    if (!string.IsNullOrEmpty(_selectedChannelText))
-                    {
-                        AsyncNetClient.Socket.Send_ChatJoinCommand(_selectedChannelText);
-                    }
+                    if (!string.IsNullOrEmpty(_selectedChannelText)) AsyncNetClient.Socket.Send_ChatJoinCommand(_selectedChannelText);
 
                     break;
 
@@ -242,18 +240,12 @@ namespace ClassicUO.Game.UI.Gumps
 
         public void UpdateConference()
         {
-            if (_currentChannelLabel.Text != World.ChatManager.CurrentChannelName)
-            {
-                _currentChannelLabel.Text = World.ChatManager.CurrentChannelName;
-            }
+            if (_currentChannelLabel.Text != World.ChatManager.CurrentChannelName) _currentChannelLabel.Text = World.ChatManager.CurrentChannelName;
         }
 
         protected override void UpdateContents()
         {
-            foreach (ChannelListItemControl control in _channelList)
-            {
-                control.Dispose();
-            }
+            foreach (ChannelListItemControl control in _channelList) control.Dispose();
 
             _channelList.Clear();
 
@@ -272,10 +264,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
             _selectedChannelText = text;
 
-            foreach (ChannelListItemControl control in _channelList)
-            {
-                control.IsSelected = control.Text == text;
-            }
+            foreach (ChannelListItemControl control in _channelList) control.IsSelected = control.Text == text;
         }
 
         private class ChannelCreationBox : Control
@@ -412,9 +401,7 @@ namespace ClassicUO.Game.UI.Gumps
                 {
                 }
                 else if (buttonID == 1) // ok
-                {
                     AsyncNetClient.Socket.Send_ChatCreateChannelCommand(_textBox.Text);
-                }
 
                 Dispose();
             }
@@ -422,8 +409,8 @@ namespace ClassicUO.Game.UI.Gumps
 
         private class ChannelListItemControl : Control
         {
-            private bool _isSelected;
             private readonly Label _label;
+            private readonly Vector3 _hueVector = ShaderHueTranslator.GetHueVector(0);
 
             public ChannelListItemControl(string text, int width)
             {
@@ -450,13 +437,13 @@ namespace ClassicUO.Game.UI.Gumps
 
             public bool IsSelected
             {
-                get => _isSelected;
+                get;
                 set
                 {
-                    if (_isSelected != value)
+                    if (field != value)
                     {
-                        _isSelected = value;
-                        _label.Hue = (ushort) (value ? 0x22 : 0x49);
+                        field = value;
+                        _label.Hue = (ushort)(value ? 0x22 : 0x49);
                     }
                 }
             }
@@ -467,10 +454,7 @@ namespace ClassicUO.Game.UI.Gumps
             {
                 base.OnMouseUp(x, y, button);
 
-                if (RootParent is ChatGump g)
-                {
-                    g.OnChannelSelected(Text);
-                }
+                if (RootParent is ChatGump g) g.OnChannelSelected(Text);
             }
 
             protected override bool OnMouseDoubleClick(int x, int y, MouseButtonType button)
@@ -480,27 +464,33 @@ namespace ClassicUO.Game.UI.Gumps
                 return true;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+                float layerDepth = layerDepthRef;
 
                 if (MouseIsOver)
-                {
-                    batcher.Draw
+                    renderLists.AddGumpNoAtlas
                     (
-                        SolidColorTextureCache.GetTexture(Color.Cyan),
-                        new Rectangle
-                        (
-                            x,
-                            y,
-                            Width,
-                            Height
-                        ),
-                        hueVector
+                        batcher =>
+                        {
+                            batcher.Draw
+                            (
+                                SolidColorTextureCache.GetTexture(Color.Cyan),
+                                new Rectangle
+                                (
+                                    x,
+                                    y,
+                                    Width,
+                                    Height
+                                ),
+                                _hueVector,
+                                layerDepth
+                            );
+                            return true;
+                        }
                     );
-                }
 
-                return base.Draw(batcher, x, y);
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
             }
         }
     }

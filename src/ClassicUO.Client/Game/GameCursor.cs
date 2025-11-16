@@ -89,7 +89,7 @@ namespace ClassicUO.Game
         private readonly Tooltip _tooltip;
         private readonly World _world;
 
-        public GameCursor(World world)
+        public GameCursor(World world, float dpiScale)
         {
             _world = world;
             _tooltip = new Tooltip(world);
@@ -105,7 +105,8 @@ namespace ClassicUO.Game
                         id,
                         (ushort)(i == 2 ? 0x0033 : 0),
                         out int hotX,
-                        out int hotY
+                        out int hotY,
+                        dpiScale
                     );
 
                     if (surface != IntPtr.Zero)
@@ -404,7 +405,8 @@ namespace ClassicUO.Game
                                 dist,
                                 Mouse.Position.X - 26,
                                 Mouse.Position.Y - 21,
-                                hue
+                                hue,
+                                0f
                             );
 
                             hue.Y = 0;
@@ -413,7 +415,8 @@ namespace ClassicUO.Game
                                 dist,
                                 Mouse.Position.X - 25,
                                 Mouse.Position.Y - 20,
-                                hue
+                                hue,
+                                0f
                             );
                         }
                     }
@@ -471,7 +474,7 @@ namespace ClassicUO.Game
                         (int)(artInfo.UV.Height * scale * gscale)
                     );
 
-                    sb.Draw(artInfo.Texture, rect, artInfo.UV, hue);
+                    sb.Draw(artInfo.Texture, rect, artInfo.UV, hue, 0f);
 
                     if (
                         ItemHold.Amount > 1
@@ -482,7 +485,7 @@ namespace ClassicUO.Game
                         rect.X += 5;
                         rect.Y += 5;
 
-                        sb.Draw(artInfo.Texture, rect, artInfo.UV, hue);
+                        sb.Draw(artInfo.Texture, rect, artInfo.UV, hue, 0f);
                     }
                 }
             }
@@ -532,7 +535,8 @@ namespace ClassicUO.Game
                     artInfo.Texture,
                     new Vector2(Mouse.Position.X - offX, Mouse.Position.Y - offY),
                     rect,
-                    hueVec
+                    hueVec,
+                    0f
                 );
             }
         }

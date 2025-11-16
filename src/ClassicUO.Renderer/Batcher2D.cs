@@ -217,10 +217,10 @@ namespace ClassicUO.Renderer
             ++_numSprites;
         }
 
-        public void DrawString(SpriteFont spriteFont, ReadOnlySpan<char> text, int x, int y, Vector3 color)
-            => DrawString(spriteFont, text, new Vector2(x, y), color);
+        public void DrawString(SpriteFont spriteFont, ReadOnlySpan<char> text, int x, int y, Vector3 color, float layerDepth)
+            => DrawString(spriteFont, text, new Vector2(x, y), color, layerDepth);
 
-        public void DrawString(SpriteFont spriteFont, ReadOnlySpan<char> text, Vector2 position, Vector3 color)
+        public void DrawString(SpriteFont spriteFont, ReadOnlySpan<char> text, Vector2 position, Vector3 color, float layerDepth)
         {
             if (text.IsEmpty)
             {
@@ -316,7 +316,8 @@ namespace ClassicUO.Renderer
                     textureValue,
                     position + pos,
                     cGlyph,
-                    color
+                    color,
+                    layerDepth
                 );
 
                 curOffset.X += cKern.Y + cKern.Z;
@@ -712,7 +713,8 @@ namespace ClassicUO.Renderer
             Texture2D texture,
             Rectangle destinationRectangle,
             Rectangle sourceRectangle,
-            Vector3 hue
+            Vector3 hue,
+            float layerDepth
         )
         {
             // Skip if texture is null or disposed
@@ -742,7 +744,8 @@ namespace ClassicUO.Renderer
                         texture,
                         pos,
                         rect,
-                        hue
+                        hue,
+                        layerDepth
                     );
 
                     w -= sourceRectangle.Width;
@@ -762,7 +765,7 @@ namespace ClassicUO.Renderer
             int width,
             int height,
             Vector3 hue,
-            float depth = 0f
+            float depth
         )
         {
             // Skip if texture is null or disposed
@@ -800,7 +803,8 @@ namespace ClassicUO.Renderer
             Vector2 start,
             Vector2 end,
             Vector3 color,
-            float stroke
+            float stroke,
+            float layerDepth
         )
         {
             // Skip if texture is null or disposed
@@ -822,7 +826,7 @@ namespace ClassicUO.Renderer
                 Vector2.Zero,
                 new Vector2(length, stroke),
                 SpriteEffects.None,
-                0
+                layerDepth
             );
         }
 
@@ -833,15 +837,17 @@ namespace ClassicUO.Renderer
         (
             Texture2D texture,
             Vector2 position,
-            Vector3 color
-        ) => AddSprite(texture, 0f, 0f, 1f, 1f, position.X, position.Y, texture.Width, texture.Height, color, 0f, 0f, 0f, 1f, 0f, 0);
+            Vector3 color,
+            float layerDepth
+        ) => AddSprite(texture, 0f, 0f, 1f, 1f, position.X, position.Y, texture.Width, texture.Height, color, 0f, 0f, 0f, 1f, layerDepth, 0);
 
         public void Draw
         (
             Texture2D texture,
             Vector2 position,
             Rectangle? sourceRectangle,
-            Vector3 color
+            Vector3 color,
+            float layerDepth
         )
         {
             float sourceX, sourceY, sourceW, sourceH;
@@ -866,7 +872,7 @@ namespace ClassicUO.Renderer
                 destH = texture.Height;
             }
 
-            AddSprite(texture, sourceX, sourceY, sourceW, sourceH, position.X, position.Y, destW, destH, color, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0);
+            AddSprite(texture, sourceX, sourceY, sourceW, sourceH, position.X, position.Y, destW, destH, color, 0.0f, 0.0f, 0.0f, 1.0f, layerDepth, 0);
         }
 
         public void Draw
@@ -984,7 +990,8 @@ namespace ClassicUO.Renderer
         (
             Texture2D texture,
             Rectangle destinationRectangle,
-            Vector3 color
+            Vector3 color,
+            float layerDepth
         ) => AddSprite(
                 texture,
                 0.0f,
@@ -1000,7 +1007,7 @@ namespace ClassicUO.Renderer
                 0.0f,
                 0.0f,
                 1.0f,
-                0.0f,
+                layerDepth,
                 0
             );
 
@@ -1009,7 +1016,8 @@ namespace ClassicUO.Renderer
             Texture2D texture,
             Rectangle destinationRectangle,
             Rectangle? sourceRectangle,
-            Vector3 color
+            Vector3 color,
+            float layerDepth
         )
         {
             float sourceX, sourceY, sourceW, sourceH;
@@ -1044,7 +1052,7 @@ namespace ClassicUO.Renderer
                 0.0f,
                 0.0f,
                 1.0f,
-                0.0f,
+                layerDepth,
                 0
             );
         }

@@ -91,7 +91,7 @@ namespace ClassicUO
             LightColors.LoadLights();
 
             World = new World();
-            GameCursor = new GameCursor(World);
+            GameCursor = new GameCursor(World, game.DpiScale);
         }
 
         public void Unload()

@@ -36,10 +36,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
             get
             {
-                if (NameOverHeadManager.IsShowing)
-                {
-                    return currentHeight;
-                }
+                if (NameOverHeadManager.IsShowing) return currentHeight;
 
                 return 0;
             }
@@ -110,34 +107,22 @@ namespace ClassicUO.Game.UI.Gumps
                 {
                     t = string.Empty;
                     _needsNameUpdate = true;
-                    if (!item.IsCorpse && item.Amount > 1)
-                    {
-                        t = item.Amount.ToString() + ' ';
-                    }
+                    if (!item.IsCorpse && item.Amount > 1) t = item.Amount.ToString() + ' ';
 
                     if (string.IsNullOrEmpty(item.ItemData.Name))
-                    {
                         t += Client.Game.UO.FileManager.Clilocs.GetString(1020000 + item.Graphic, true, t);
-                    }
                     else
-                    {
                         t += StringHelper.CapitalizeAllWords(
                             StringHelper.GetPluralAdjustedString(
                                 item.ItemData.Name,
                                 item.Amount > 1
                             )
                         );
-                    }
                 }
                 else
-                {
                     _needsNameUpdate = false;
-                }
 
-                if (string.IsNullOrEmpty(t))
-                {
-                    return false;
-                }
+                if (string.IsNullOrEmpty(t)) return false;
 
                 _text.Text = t;
 
@@ -194,10 +179,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
             Entity entity = World.Get(LocalSerial);
 
-            if (entity != null)
-            {
-                entity.ObjectHandlesStatus = ObjectHandlesStatus.CLOSED;
-            }
+            if (entity != null) entity.ObjectHandlesStatus = ObjectHandlesStatus.CLOSED;
 
             base.CloseWithRightClick();
         }
@@ -210,9 +192,7 @@ namespace ClassicUO.Game.UI.Gumps
                 Math.Abs(delta.X) <= Constants.MIN_GUMP_DRAG_DISTANCE
                 && Math.Abs(delta.Y) <= Constants.MIN_GUMP_DRAG_DISTANCE
             )
-            {
                 return;
-            }
 
             _leftMouseIsDown = false;
             _positionLocked = false;
@@ -221,10 +201,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             if (entity is Mobile || entity is Item it && it.IsDamageable)
             {
-                if (UIManager.IsDragging)
-                {
-                    return;
-                }
+                if (UIManager.IsDragging) return;
 
                 BaseHealthBarGump gump = UIManager.GetGump<BaseHealthBarGump>(LocalSerial);
                 gump?.Dispose();
@@ -261,15 +238,11 @@ namespace ClassicUO.Game.UI.Gumps
 
                 UIManager.AttemptDragControl(gump, true);
             }
-            else if (entity != null)
-            {
-                GameActions.PickUp(World, LocalSerial, 0, 0);
-
-                //if (entity.Texture != null)
-                //    GameActions.PickUp(LocalSerial, entity.Texture.Width >> 1, entity.Texture.Height >> 1);
-                //else
-                //    GameActions.PickUp(LocalSerial, 0, 0);
-            }
+            else if (entity != null) GameActions.PickUp(World, LocalSerial, 0, 0);
+            //if (entity.Texture != null)
+            //    GameActions.PickUp(LocalSerial, entity.Texture.Width >> 1, entity.Texture.Height >> 1);
+            //else
+            //    GameActions.PickUp(LocalSerial, 0, 0);
         }
 
         protected override bool OnMouseDoubleClick(int x, int y, MouseButtonType button)
@@ -279,20 +252,13 @@ namespace ClassicUO.Game.UI.Gumps
                 if (SerialHelper.IsMobile(LocalSerial))
                 {
                     if (World.Player.InWarMode)
-                    {
                         GameActions.Attack(World, LocalSerial);
-                    }
                     else
-                    {
                         GameActions.DoubleClick(World, LocalSerial);
-                    }
                 }
                 else
                 {
-                    if (!GameActions.OpenCorpse(World, LocalSerial))
-                    {
-                        GameActions.DoubleClick(World, LocalSerial);
-                    }
+                    if (!GameActions.OpenCorpse(World, LocalSerial)) GameActions.DoubleClick(World, LocalSerial);
                 }
 
                 return true;
@@ -319,21 +285,18 @@ namespace ClassicUO.Game.UI.Gumps
                 _leftMouseIsDown = false;
 
                 if (!Client.Game.UO.GameCursor.ItemHold.Enabled)
-                {
                     if (
                         UIManager.IsDragging
                         || Math.Max(Math.Abs(Mouse.LDragOffset.X), Math.Abs(Mouse.LDragOffset.Y))
-                            >= 1
+                        >= 1
                     )
                     {
                         _positionLocked = false;
 
                         return;
                     }
-                }
 
                 if (World.TargetManager.IsTargeting)
-                {
                     switch (World.TargetManager.TargetingState)
                     {
                         case CursorTarget.Internal:
@@ -359,7 +322,6 @@ namespace ClassicUO.Game.UI.Gumps
 
                             break;
                     }
-                }
                 else
                 {
                     if (
@@ -403,31 +365,21 @@ namespace ClassicUO.Game.UI.Gumps
                                     dropZ = obj.Z;
 
                                     if (it2.ItemData.IsSurface)
-                                    {
                                         dropZ += (sbyte)(
                                             it2.ItemData.Height == 0xFF ? 0 : it2.ItemData.Height
                                         );
-                                    }
                                     else
-                                    {
                                         drop_container = obj.Serial;
-                                    }
                                 }
                             }
                             else
-                            {
                                 Client.Game.Audio.PlaySound(0x0051);
-                            }
 
                             if (can_drop)
                             {
-                                if (drop_container == 0xFFFF_FFFF && dropX == 0 && dropY == 0)
-                                {
-                                    can_drop = false;
-                                }
+                                if (drop_container == 0xFFFF_FFFF && dropX == 0 && dropY == 0) can_drop = false;
 
                                 if (can_drop)
-                                {
                                     GameActions.DropItem(
                                         Client.Game.UO.GameCursor.ItemHold.Serial,
                                         dropX,
@@ -435,19 +387,16 @@ namespace ClassicUO.Game.UI.Gumps
                                         dropZ,
                                         drop_container
                                     );
-                                }
                             }
                         }
                     }
                     else if (!World.DelayedObjectClickManager.IsEnabled)
-                    {
                         World.DelayedObjectClickManager.Set(
                             LocalSerial,
                             Mouse.Position.X,
                             Mouse.Position.Y,
                             Time.Ticks + Mouse.MOUSE_DELAY_DOUBLE_CLICK
                         );
-                    }
                 }
             }
 
@@ -456,10 +405,7 @@ namespace ClassicUO.Game.UI.Gumps
 
         protected override void OnMouseOver(int x, int y)
         {
-            if (_leftMouseIsDown)
-            {
-                DoDrag();
-            }
+            if (_leftMouseIsDown) DoDrag();
 
             if (!_positionLocked && SerialHelper.IsMobile(LocalSerial))
             {
@@ -520,14 +466,10 @@ namespace ClassicUO.Game.UI.Gumps
             var result = new List<NameOverheadGump>();
 
             for (LinkedListNode<Gump> node = UIManager.Gumps.First; node != null; node = node.Next)
-            {
                 if (node.Value is NameOverheadGump nameGump &&
                     !nameGump.IsDisposed &&
                     nameGump.IsVisible)
-                {
                     result.Add(nameGump);
-                }
-            }
 
             return result;
         }
@@ -536,10 +478,7 @@ namespace ClassicUO.Game.UI.Gumps
 
         private Point AdjustPositionToAvoidOverlap(int originalX, int originalY)
         {
-            if (!ProfileManager.CurrentProfile.NamePlateAvoidOverlap)
-            {
-                return new Point(originalX, originalY);
-            }
+            if (!ProfileManager.CurrentProfile.NamePlateAvoidOverlap) return new Point(originalX, originalY);
 
             List<NameOverheadGump> allNameOverheads = GetAllVisibleNameOverheads();
             int adjustedX = originalX;
@@ -588,9 +527,7 @@ namespace ClassicUO.Game.UI.Gumps
                 || entity.ObjectHandlesStatus == ObjectHandlesStatus.NONE
                 || entity.ObjectHandlesStatus == ObjectHandlesStatus.CLOSED
             )
-            {
                 Dispose();
-            }
             else
             {
                 if (entity == World.TargetManager.LastTargetInfo.Serial)
@@ -616,19 +553,13 @@ namespace ClassicUO.Game.UI.Gumps
                     }
                 }
 
-                if (_needsNameUpdate)
-                {
-                    SetName();
-                }
+                if (_needsNameUpdate) SetName();
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            if (IsDisposed)
-            {
-                return false;
-            }
+            if (IsDisposed) return false;
 
             bool _isMobile = false;
             double _hpPercent = 1;
@@ -789,7 +720,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-            Point p = Client.Game.Scene.Camera.WorldToScreen(new Point(x, y));
+            Point p = Client.Game.Scene.Camera.WorldToScreen(new Point(x, y), true);
             x = p.X - (Width >> 1);
             y = p.Y - (Height);// >> 1);
 
@@ -797,15 +728,9 @@ namespace ClassicUO.Game.UI.Gumps
             x += camera.Bounds.X;
             y += camera.Bounds.Y;
 
-            if (x < camera.Bounds.X || x + Width > camera.Bounds.Right)
-            {
-                return false;
-            }
+            if (x < camera.Bounds.X || x + Width > camera.Bounds.Right) return false;
 
-            if (y < camera.Bounds.Y || y + Height > camera.Bounds.Bottom)
-            {
-                return false;
-            }
+            if (y < camera.Bounds.Y || y + Height > camera.Bounds.Bottom) return false;
 
             Point adjustedPos = AdjustPositionToAvoidOverlap(x, y);
             x = adjustedPos.X;
@@ -816,17 +741,26 @@ namespace ClassicUO.Game.UI.Gumps
 
             hueVector.Z = ProfileManager.CurrentProfile.NamePlateBorderOpacity / 100f;
 
-            batcher.DrawRectangle
-            (
-                _borderColor,
-                x,
-                y,
-                Width,
-                Height,
-                hueVector
-            );
+            float layerDepth = layerDepthRef;
 
-            base.Draw(batcher, x, y);
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.DrawRectangle
+                (
+                    _borderColor,
+                    x,
+                    y,
+                    Width,
+                    Height,
+                    hueVector,
+                    layerDepth
+                );
+
+                return true;
+            });
+
+
+            base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
 
             if (ProfileManager.CurrentProfile.NamePlateHealthBar && _isMobile)
             {
@@ -835,64 +769,68 @@ namespace ClassicUO.Game.UI.Gumps
                 bool isInParty = World.Party.Contains(m.Serial);
 
                 float _alpha = ProfileManager.CurrentProfile.NamePlateHealthBarOpacity / 100f;
-                DrawResourceBar(batcher, m, x, y, Height / (isPlayer || isInParty ? 3 : 1), m =>
+
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    double hpPercent = (double)m.Hits / (double)m.HitsMax;
-                    int _baseHue = hpPercent switch
+                    DrawResourceBar(batcher, m, x, y, Height / (isPlayer || isInParty ? 3 : 1), layerDepth, m =>
                     {
-                        1 => (m is PlayerMobile || World.Party.Contains(m.Serial)) ? 0x0058 : Notoriety.GetHue(m.NotorietyFlag),
-                        > .8 => 0x0058,
-                        > .4 => 0x0030,
-                        _ => 0x0021
-                    };
-                    Vector3 hueVec = ShaderHueTranslator.GetHueVector(_baseHue, false, _alpha);
-
-                    if (m.IsPoisoned)
-                    {
-                        hueVec = ShaderHueTranslator.GetHueVector(63, false, _alpha);
-                    }
-                    else if (m.IsYellowHits || m.IsParalyzed)
-                    {
-                        hueVec = ShaderHueTranslator.GetHueVector(353, false, _alpha);
-                    }
-                    return (hueVec, hpPercent);
-                }, out int nY);
-
-                if (m is PlayerMobile || isInParty)
-                {
-                    DrawResourceBar(batcher, m, x, nY, Height / 3, m =>
-                    {
-                        double mpPercent = (double)m.Mana / (double)m.ManaMax;
-                        int _baseHue = mpPercent switch
+                        double hpPercent = (double)m.Hits / (double)m.HitsMax;
+                        int _baseHue = hpPercent switch
                         {
-                            > .6 => 0x0058,
-                            > .2 => 0x0030,
-                            _ => 0x0021
-                        };
-                        Vector3 hueVec = ShaderHueTranslator.GetHueVector(_baseHue, false, _alpha);
-                        return (hueVec, mpPercent);
-                    }, out nY);
-
-                    DrawResourceBar(batcher, m, x, nY, Height / 3, m =>
-                    {
-                        double spPercent = (double)m.Stamina / (double)m.StaminaMax;
-                        int _baseHue = spPercent switch
-                        {
+                            1 => (m is PlayerMobile || World.Party.Contains(m.Serial)) ? 0x0058 : Notoriety.GetHue(m.NotorietyFlag),
                             > .8 => 0x0058,
-                            > .5 => 0x0030,
+                            > .4 => 0x0030,
                             _ => 0x0021
                         };
                         Vector3 hueVec = ShaderHueTranslator.GetHueVector(_baseHue, false, _alpha);
-                        return (hueVec, spPercent);
-                    }, out nY);
-                    y += 20;
-                }
+
+                        if (m.IsPoisoned)
+                            hueVec = ShaderHueTranslator.GetHueVector(63, false, _alpha);
+                        else if (m.IsYellowHits || m.IsParalyzed) hueVec = ShaderHueTranslator.GetHueVector(353, false, _alpha);
+                        return (hueVec, hpPercent);
+                    }, out int nY);
+
+                    if (m is PlayerMobile || isInParty)
+                    {
+                        DrawResourceBar(batcher, m, x, nY, Height / 3, layerDepth, m =>
+                        {
+                            double mpPercent = (double)m.Mana / (double)m.ManaMax;
+                            int _baseHue = mpPercent switch
+                            {
+                                > .6 => 0x0058,
+                                > .2 => 0x0030,
+                                _ => 0x0021
+                            };
+                            Vector3 hueVec = ShaderHueTranslator.GetHueVector(_baseHue, false, _alpha);
+                            return (hueVec, mpPercent);
+                        }, out nY);
+
+                        DrawResourceBar(batcher, m, x, nY, Height / 3, layerDepth, m =>
+                        {
+                            double spPercent = (double)m.Stamina / (double)m.StaminaMax;
+                            int _baseHue = spPercent switch
+                            {
+                                > .8 => 0x0058,
+                                > .5 => 0x0030,
+                                _ => 0x0021
+                            };
+                            Vector3 hueVec = ShaderHueTranslator.GetHueVector(_baseHue, false, _alpha);
+                            return (hueVec, spPercent);
+                        }, out nY);
+                    }
+
+                    return true;
+                });
+
+                y += 20;
             }
 
-            return _text.Draw(batcher, (int)(x + 2 + _textDrawOffset.X), (int)(y + 2 + _textDrawOffset.Y));
+            renderLists.AddGumpNoAtlas(batcher => _text.Draw(batcher, (int)(x + 2 + _textDrawOffset.X), (int)(y + 2 + _textDrawOffset.Y), _text.FontColor));
+
+            return true;
         }
 
-        private void DrawResourceBar(UltimaBatcher2D batcher, Mobile m, int x, int y, int height, Func<Mobile, (Vector3, double)> getHueVector, out int nY)
+        private void DrawResourceBar(UltimaBatcher2D batcher, Mobile m, int x, int y, int height, float depth, Func<Mobile, (Vector3, double)> getHueVector, out int nY)
         {
             (Vector3, double) data = getHueVector == null ? (ShaderHueTranslator.GetHueVector(0x0058), 0) : getHueVector(m);
             batcher.DrawRectangle
@@ -902,14 +840,16 @@ namespace ClassicUO.Game.UI.Gumps
                 y,
                 Width,
                 height,
-                ShaderHueTranslator.GetHueVector(0)
+                ShaderHueTranslator.GetHueVector(0),
+                depth
             );
             batcher.Draw
             (
                 SolidColorTextureCache.GetTexture(Color.White),
                 new Vector2(x + 1, y + 1),
                 new Rectangle(x, y, Math.Min((int)((Width - 1) * data.Item2), Width - 1), height),
-                data.Item1
+                data.Item1,
+                depth
             );
             nY = y + height;
         }

@@ -139,7 +139,7 @@ namespace ClassicUO.Game.UI.Gumps
             Renderer.Camera camera = scene.Camera;
 
             var p = new Point(x, y);
-            p = Client.Game.Scene.Camera.WorldToScreen(p);
+            p = Client.Game.Scene.Camera.WorldToScreen(p, true);
             p.X += camera.Bounds.X;
             p.Y += camera.Bounds.Y;
             x = p.X;

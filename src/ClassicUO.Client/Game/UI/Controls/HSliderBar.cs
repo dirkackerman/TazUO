@@ -2,368 +2,385 @@
 
 using System;
 using System.Collections.Generic;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Input;
-using ClassicUO.Assets;
 using ClassicUO.Renderer;
 using ClassicUO.Utility;
 using Microsoft.Xna.Framework;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public enum HSliderBarStyle
 {
-    public enum HSliderBarStyle
+    MetalWidgetRecessedBar,
+    BlueWidgetNoBar
+}
+
+public class HSliderBar : Control
+{
+    private bool _clicked;
+    private readonly bool _drawUp;
+    private readonly List<HSliderBar> _pairedSliders = new List<HSliderBar>();
+    private int _sliderX;
+    private readonly HSliderBarStyle _style;
+    private readonly RenderedText _text;
+    private int _value = -1;
+
+    public HSliderBar(
+        int x,
+        int y,
+        int w,
+        int min,
+        int max,
+        int value,
+        HSliderBarStyle style,
+        bool hasText = false,
+        byte font = 0,
+        ushort color = 0,
+        bool unicode = true,
+        bool drawUp = false
+    )
     {
-        MetalWidgetRecessedBar,
-        BlueWidgetNoBar
+        X = x;
+        Y = y;
+
+        if (hasText)
+        {
+            _text = RenderedText.Create(string.Empty, color, font, unicode);
+            _drawUp = drawUp;
+        }
+
+        MinValue = min;
+        MaxValue = max;
+        BarWidth = w;
+        _style = style;
+        AcceptMouseInput = true;
+
+        ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
+            (uint)(_style == HSliderBarStyle.MetalWidgetRecessedBar ? 216 : 0x845)
+        );
+
+        Width = BarWidth;
+
+        if (gumpInfo.Texture != null)
+        {
+            Height = gumpInfo.UV.Height;
+        }
+
+        CalculateOffset();
+
+        Value = value;
     }
 
-    public class HSliderBar : Control
+    public int MinValue { get; set; }
+
+    public int MaxValue { get; set; }
+
+    public int BarWidth { get; set; }
+
+    public float Percents { get; private set; }
+
+    public int Value
     {
-        private bool _clicked;
-        private readonly bool _drawUp;
-        private readonly List<HSliderBar> _pairedSliders = new List<HSliderBar>();
-        private int _sliderX;
-        private readonly HSliderBarStyle _style;
-        private readonly RenderedText _text;
-        private int _value = -1;
-
-        public HSliderBar(
-            int x,
-            int y,
-            int w,
-            int min,
-            int max,
-            int value,
-            HSliderBarStyle style,
-            bool hasText = false,
-            byte font = 0,
-            ushort color = 0,
-            bool unicode = true,
-            bool drawUp = false
-        )
+        get => _value;
+        set
         {
-            X = x;
-            Y = y;
-
-            if (hasText)
+            if (_value != value)
             {
-                _text = RenderedText.Create(string.Empty, color, font, unicode);
-                _drawUp = drawUp;
-            }
-
-            MinValue = min;
-            MaxValue = max;
-            BarWidth = w;
-            _style = style;
-            AcceptMouseInput = true;
-
-            ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
-                (uint)(_style == HSliderBarStyle.MetalWidgetRecessedBar ? 216 : 0x845)
-            );
-
-            Width = BarWidth;
-
-            if (gumpInfo.Texture != null)
-            {
-                Height = gumpInfo.UV.Height;
-            }
-
-            CalculateOffset();
-
-            Value = value;
-        }
-
-        public int MinValue { get; set; }
-
-        public int MaxValue { get; set; }
-
-        public int BarWidth { get; set; }
-
-        public float Percents { get; private set; }
-
-        public int Value
-        {
-            get => _value;
-            set
-            {
-                if (_value != value)
-                {
-                    int oldValue = _value;
-                    _value = /*_newValue =*/
+                int oldValue = _value;
+                _value = /*_newValue =*/
                     value;
-                    //if (IsInitialized)
-                    //    RecalculateSliderX();
+                //if (IsInitialized)
+                //    RecalculateSliderX();
 
-                    if (_value < MinValue)
-                    {
-                        _value = MinValue;
-                    }
-                    else if (_value > MaxValue)
-                    {
-                        _value = MaxValue;
-                    }
-
-                    if (_text != null)
-                    {
-                        _text.Text = Value.ToString();
-                    }
-
-                    if (_value != oldValue)
-                    {
-                        ModifyPairedValues(_value - oldValue);
-
-                        CalculateOffset();
-                    }
-
-                    ValueChanged.Raise();
-                }
-            }
-        }
-
-        public event EventHandler ValueChanged;
-
-        public override void Update()
-        {
-            base.Update();
-
-            if (_clicked)
-            {
-                int x = Mouse.Position.X - X - ParentX;
-                int y = Mouse.Position.Y - Y - ParentY;
-
-                CalculateNew(x);
-            }
-        }
-
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
-
-            if (_style == HSliderBarStyle.MetalWidgetRecessedBar)
-            {
-                ref readonly SpriteInfo gumpInfo0 = ref Client.Game.UO.Gumps.GetGump(213);
-                ref readonly SpriteInfo gumpInfo1 = ref Client.Game.UO.Gumps.GetGump(214);
-                ref readonly SpriteInfo gumpInfo2 = ref Client.Game.UO.Gumps.GetGump(215);
-                ref readonly SpriteInfo gumpInfo3 = ref Client.Game.UO.Gumps.GetGump(216);
-
-                batcher.Draw(gumpInfo0.Texture, new Vector2(x, y), gumpInfo0.UV, hueVector);
-
-                batcher.DrawTiled(
-                    gumpInfo1.Texture,
-                    new Rectangle(
-                        x + gumpInfo0.UV.Width,
-                        y,
-                        BarWidth - gumpInfo2.UV.Width - gumpInfo0.UV.Width,
-                        gumpInfo1.UV.Height
-                    ),
-                    gumpInfo1.UV,
-                    hueVector
-                );
-
-                batcher.Draw(
-                    gumpInfo2.Texture,
-                    new Vector2(x + BarWidth - gumpInfo2.UV.Width, y),
-                    gumpInfo2.UV,
-                    hueVector
-                );
-
-                batcher.Draw(
-                    gumpInfo3.Texture,
-                    new Vector2(x + _sliderX, y),
-                    gumpInfo3.UV,
-                    hueVector
-                );
-            }
-            else
-            {
-                ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(idx: 0x845);
-
-                batcher.Draw(
-                    gumpInfo.Texture,
-                    new Vector2(x + _sliderX, y),
-                    gumpInfo.UV,
-                    hueVector
-                );
-            }
-
-            if (_text != null)
-            {
-                if (_drawUp)
+                if (_value < MinValue)
                 {
-                    _text.Draw(batcher, x, y - _text.Height);
+                    _value = MinValue;
                 }
-                else
+                else if (_value > MaxValue)
                 {
-                    _text.Draw(batcher, x + BarWidth + 2, y + (Height >> 1) - (_text.Height >> 1));
+                    _value = MaxValue;
                 }
-            }
 
-            return base.Draw(batcher, x, y);
+                if (_text != null)
+                {
+                    _text.Text = Value.ToString();
+                }
+
+                if (_value != oldValue)
+                {
+                    ModifyPairedValues(_value - oldValue);
+
+                    CalculateOffset();
+                }
+
+                ValueChanged.Raise();
+            }
         }
+    }
 
-        private void InternalSetValue(int value)
+    public event EventHandler ValueChanged;
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (_clicked)
         {
-            _value = value;
-            CalculateOffset();
+            int x = Mouse.Position.X - X - ParentX;
+            int y = Mouse.Position.Y - Y - ParentY;
 
-            if (_text != null)
-            {
-                _text.Text = Value.ToString();
-            }
-        }
-
-        protected override void OnMouseDown(int x, int y, MouseButtonType button)
-        {
-            if (button != MouseButtonType.Left)
-            {
-                return;
-            }
-
-            _clicked = true;
-        }
-
-        protected override void OnMouseUp(int x, int y, MouseButtonType button)
-        {
-            if (button != MouseButtonType.Left)
-            {
-                return;
-            }
-
-            _clicked = false;
             CalculateNew(x);
         }
+    }
 
-        protected override void OnMouseWheel(MouseEventType delta)
-        {
-            switch (delta)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        float layerDepth = layerDepthRef;
+        Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+
+        renderLists.AddGumpWithAtlas
+        (
+            batcher =>
             {
-                case MouseEventType.WheelScrollUp:
-                    Value++;
 
-                    break;
-
-                case MouseEventType.WheelScrollDown:
-                    Value--;
-
-                    break;
-            }
-
-            CalculateOffset();
-        }
-
-        private void CalculateNew(int x)
-        {
-            int len = BarWidth;
-            int maxValue = MaxValue - MinValue;
-
-            ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
-                (uint)(_style == HSliderBarStyle.MetalWidgetRecessedBar ? 216 : 0x845)
-            );
-
-            len -= gumpInfo.UV.Width;
-            float perc = x / (float)len * 100.0f;
-            Value = (int)(maxValue * perc / 100.0f) + MinValue;
-            CalculateOffset();
-        }
-
-        private void CalculateOffset()
-        {
-            if (Value < MinValue)
-            {
-                Value = MinValue;
-            }
-            else if (Value > MaxValue)
-            {
-                Value = MaxValue;
-            }
-
-            int value = Value - MinValue;
-            int maxValue = MaxValue - MinValue;
-            int length = BarWidth;
-
-            ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
-                (uint)(_style == HSliderBarStyle.MetalWidgetRecessedBar ? 216 : 0x845)
-            );
-            length -= gumpInfo.UV.Width;
-
-            if (maxValue > 0)
-            {
-                Percents = value / (float)maxValue * 100.0f;
-            }
-            else
-            {
-                Percents = 0;
-            }
-
-            _sliderX = (int)(length * Percents / 100.0f);
-
-            if (_sliderX < 0)
-            {
-                _sliderX = 0;
-            }
-        }
-
-        public void AddParisSlider(HSliderBar s) => _pairedSliders.Add(s);
-
-        private void ModifyPairedValues(int delta)
-        {
-            if (_pairedSliders.Count == 0)
-            {
-                return;
-            }
-
-            bool updateSinceLastCycle = true;
-            int d = delta > 0 ? -1 : 1;
-            int points = Math.Abs(delta);
-            int sliderIndex = Value % _pairedSliders.Count;
-
-            while (points > 0)
-            {
-                if (d > 0)
+                if (_style == HSliderBarStyle.MetalWidgetRecessedBar)
                 {
-                    if (_pairedSliders[sliderIndex].Value < _pairedSliders[sliderIndex].MaxValue)
-                    {
-                        updateSinceLastCycle = true;
+                    ref readonly SpriteInfo gumpInfo0 = ref Client.Game.UO.Gumps.GetGump(213);
+                    ref readonly SpriteInfo gumpInfo1 = ref Client.Game.UO.Gumps.GetGump(214);
+                    ref readonly SpriteInfo gumpInfo2 = ref Client.Game.UO.Gumps.GetGump(215);
+                    ref readonly SpriteInfo gumpInfo3 = ref Client.Game.UO.Gumps.GetGump(216);
 
-                        _pairedSliders[sliderIndex].InternalSetValue(
-                            _pairedSliders[sliderIndex].Value + d
-                        );
+                    batcher.Draw(gumpInfo0.Texture, new Vector2(x, y), gumpInfo0.UV, hueVector, layerDepth);
 
-                        points--;
-                    }
+                    batcher.DrawTiled(
+                        gumpInfo1.Texture,
+                        new Rectangle(
+                            x + gumpInfo0.UV.Width,
+                            y,
+                            BarWidth - gumpInfo2.UV.Width - gumpInfo0.UV.Width,
+                            gumpInfo1.UV.Height
+                        ),
+                        gumpInfo1.UV,
+                        hueVector,
+                        layerDepth
+                    );
+
+                    batcher.Draw(
+                        gumpInfo2.Texture,
+                        new Vector2(x + BarWidth - gumpInfo2.UV.Width, y),
+                        gumpInfo2.UV,
+                        hueVector,
+                        layerDepth
+                    );
+
+                    batcher.Draw(
+                        gumpInfo3.Texture,
+                        new Vector2(x + _sliderX, y),
+                        gumpInfo3.UV,
+                        hueVector,
+                        layerDepth
+                    );
                 }
                 else
                 {
-                    if (_pairedSliders[sliderIndex].Value > _pairedSliders[sliderIndex].MinValue)
-                    {
-                        updateSinceLastCycle = true;
+                    ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(idx: 0x845);
 
-                        _pairedSliders[sliderIndex].InternalSetValue(
-                            _pairedSliders[sliderIndex]._value + d
-                        );
-
-                        points--;
-                    }
+                    batcher.Draw(
+                        gumpInfo.Texture,
+                        new Vector2(x + _sliderX, y),
+                        gumpInfo.UV,
+                        hueVector,
+                        layerDepth
+                    );
                 }
+                return true;
+            }
+        );
 
-                sliderIndex++;
-
-                if (sliderIndex == _pairedSliders.Count)
+        if (_text != null)
+            renderLists.AddGumpNoAtlas
+            (
+                batcher =>
                 {
-                    if (!updateSinceLastCycle)
+                    if (_drawUp)
                     {
-                        return;
+                        _text.Draw(batcher, x, y - _text.Height, layerDepth);
                     }
+                    else
+                    {
+                        _text.Draw(batcher, x + BarWidth + 2, y + (Height >> 1) - (_text.Height >> 1), layerDepth);
+                    }
+                    return true;
+                }
+            );
 
-                    updateSinceLastCycle = false;
-                    sliderIndex = 0;
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+    }
+
+    private void InternalSetValue(int value)
+    {
+        _value = value;
+        CalculateOffset();
+
+        if (_text != null)
+        {
+            _text.Text = Value.ToString();
+        }
+    }
+
+    protected override void OnMouseDown(int x, int y, MouseButtonType button)
+    {
+        if (button != MouseButtonType.Left)
+        {
+            return;
+        }
+
+        _clicked = true;
+    }
+
+    protected override void OnMouseUp(int x, int y, MouseButtonType button)
+    {
+        if (button != MouseButtonType.Left)
+        {
+            return;
+        }
+
+        _clicked = false;
+        CalculateNew(x);
+    }
+
+    protected override void OnMouseWheel(MouseEventType delta)
+    {
+        switch (delta)
+        {
+            case MouseEventType.WheelScrollUp:
+                Value++;
+
+                break;
+
+            case MouseEventType.WheelScrollDown:
+                Value--;
+
+                break;
+        }
+
+        CalculateOffset();
+    }
+
+    private void CalculateNew(int x)
+    {
+        int len = BarWidth;
+        int maxValue = MaxValue - MinValue;
+
+        ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
+            (uint)(_style == HSliderBarStyle.MetalWidgetRecessedBar ? 216 : 0x845)
+        );
+
+        len -= gumpInfo.UV.Width;
+        float perc = x / (float)len * 100.0f;
+        Value = (int)(maxValue * perc / 100.0f) + MinValue;
+        CalculateOffset();
+    }
+
+    private void CalculateOffset()
+    {
+        if (Value < MinValue)
+        {
+            Value = MinValue;
+        }
+        else if (Value > MaxValue)
+        {
+            Value = MaxValue;
+        }
+
+        int value = Value - MinValue;
+        int maxValue = MaxValue - MinValue;
+        int length = BarWidth;
+
+        ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
+            (uint)(_style == HSliderBarStyle.MetalWidgetRecessedBar ? 216 : 0x845)
+        );
+        length -= gumpInfo.UV.Width;
+
+        if (maxValue > 0)
+        {
+            Percents = value / (float)maxValue * 100.0f;
+        }
+        else
+        {
+            Percents = 0;
+        }
+
+        _sliderX = (int)(length * Percents / 100.0f);
+
+        if (_sliderX < 0)
+        {
+            _sliderX = 0;
+        }
+    }
+
+    public void AddParisSlider(HSliderBar s) => _pairedSliders.Add(s);
+
+    private void ModifyPairedValues(int delta)
+    {
+        if (_pairedSliders.Count == 0)
+        {
+            return;
+        }
+
+        bool updateSinceLastCycle = true;
+        int d = delta > 0 ? -1 : 1;
+        int points = Math.Abs(delta);
+        int sliderIndex = Value % _pairedSliders.Count;
+
+        while (points > 0)
+        {
+            if (d > 0)
+            {
+                if (_pairedSliders[sliderIndex].Value < _pairedSliders[sliderIndex].MaxValue)
+                {
+                    updateSinceLastCycle = true;
+
+                    _pairedSliders[sliderIndex].InternalSetValue(
+                        _pairedSliders[sliderIndex].Value + d
+                    );
+
+                    points--;
                 }
             }
-        }
+            else
+            {
+                if (_pairedSliders[sliderIndex].Value > _pairedSliders[sliderIndex].MinValue)
+                {
+                    updateSinceLastCycle = true;
 
-        public override void Dispose()
-        {
-            _text?.Destroy();
-            base.Dispose();
+                    _pairedSliders[sliderIndex].InternalSetValue(
+                        _pairedSliders[sliderIndex]._value + d
+                    );
+
+                    points--;
+                }
+            }
+
+            sliderIndex++;
+
+            if (sliderIndex == _pairedSliders.Count)
+            {
+                if (!updateSinceLastCycle)
+                {
+                    return;
+                }
+
+                updateSinceLastCycle = false;
+                sliderIndex = 0;
+            }
         }
+    }
+
+    public override void Dispose()
+    {
+        _text?.Destroy();
+        base.Dispose();
     }
 }

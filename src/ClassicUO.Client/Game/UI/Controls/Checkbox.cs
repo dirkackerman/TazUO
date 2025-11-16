@@ -6,117 +6,132 @@ using ClassicUO.Utility;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using ClassicUO.Game.Scenes;
+using Microsoft.Xna.Framework.Graphics;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class Checkbox : Control
 {
-    public class Checkbox : Control
+    private bool _isChecked;
+    private readonly RenderedText _text;
+    private readonly ushort _inactive, _active;
+
+    public Checkbox(
+        ushort inactive,
+        ushort active,
+        string text = "",
+        byte font = 0,
+        ushort color = 0,
+        bool isunicode = true,
+        int maxWidth = 0
+    )
     {
-        private bool _isChecked;
-        private readonly RenderedText _text;
-        private readonly ushort _inactive, _active;
+        _inactive = inactive;
+        _active = active;
 
-        public Checkbox(
-            ushort inactive,
-            ushort active,
-            string text = "",
-            byte font = 0,
-            ushort color = 0,
-            bool isunicode = true,
-            int maxWidth = 0
-        )
+        ref readonly SpriteInfo gumpInfoInactive = ref Client.Game.UO.Gumps.GetGump(inactive);
+        ref readonly SpriteInfo gumpInfoActive = ref Client.Game.UO.Gumps.GetGump(active);
+
+        if (gumpInfoInactive.Texture == null || gumpInfoActive.Texture == null)
         {
-            _inactive = inactive;
-            _active = active;
+            Dispose();
 
-            ref readonly SpriteInfo gumpInfoInactive = ref Client.Game.UO.Gumps.GetGump(inactive);
-            ref readonly SpriteInfo gumpInfoActive = ref Client.Game.UO.Gumps.GetGump(active);
-
-            if (gumpInfoInactive.Texture == null || gumpInfoActive.Texture == null)
-            {
-                Dispose();
-
-                return;
-            }
-
-            Width = gumpInfoInactive.UV.Width;
-
-            _text = RenderedText.Create(text, color, font, isunicode, maxWidth: maxWidth);
-
-            Width += _text.Width;
-
-            Height = Math.Max(gumpInfoInactive.UV.Width, _text.Height);
-            CanMove = false;
-            AcceptMouseInput = true;
+            return;
         }
 
-        public Checkbox(List<string> parts, string[] lines)
-            : this(ushort.Parse(parts[3]), ushort.Parse(parts[4]))
-        {
-            X = int.Parse(parts[1]);
-            Y = int.Parse(parts[2]);
-            IsChecked = parts[5] == "1";
-            LocalSerial = SerialHelper.Parse(parts[6]);
-            IsFromServer = true;
-        }
+        Width = gumpInfoInactive.UV.Width;
 
-        public bool IsChecked
+        _text = RenderedText.Create(text, color, font, isunicode, maxWidth: maxWidth);
+
+        Width += _text.Width;
+
+        Height = Math.Max(gumpInfoInactive.UV.Width, _text.Height);
+        CanMove = false;
+        AcceptMouseInput = true;
+    }
+
+    public Checkbox(List<string> parts, string[] lines)
+        : this(ushort.Parse(parts[3]), ushort.Parse(parts[4]))
+    {
+        X = int.Parse(parts[1]);
+        Y = int.Parse(parts[2]);
+        IsChecked = parts[5] == "1";
+        LocalSerial = SerialHelper.Parse(parts[6]);
+        IsFromServer = true;
+    }
+
+    public bool IsChecked
+    {
+        get => _isChecked;
+        set
         {
-            get => _isChecked;
-            set
+            if (_isChecked != value)
             {
-                if (_isChecked != value)
-                {
-                    _isChecked = value;
-                    OnCheckedChanged();
-                }
+                _isChecked = value;
+                OnCheckedChanged();
             }
         }
+    }
 
-        public override ClickPriority Priority => ClickPriority.High;
+    public override ClickPriority Priority => ClickPriority.High;
 
-        public string Text => _text.Text;
+    public string Text => _text.Text;
 
-        public event EventHandler ValueChanged;
+    public event EventHandler ValueChanged;
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            if (IsDisposed)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        if (IsDisposed) return false;
+
+        bool ok = base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+        float layerDepth = layerDepthRef;
+
+        ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
+            IsChecked ? _active : _inactive
+        );
+
+        Texture2D texture = gumpInfo.Texture;
+        Rectangle sourceRectangle = gumpInfo.UV;
+        renderLists.AddGumpWithAtlas
+        (
+            (batcher) =>
             {
-                return false;
+                batcher.Draw(
+                    texture,
+                    new Vector2(x, y),
+                    sourceRectangle,
+                    ShaderHueTranslator.GetHueVector(0),
+                    layerDepth
+                );
+
+                return true;
             }
+        );
 
-            bool ok = base.Draw(batcher, x, y);
-
-            ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(
-                IsChecked ? _active : _inactive
-            );
-
-            batcher.Draw(
-                gumpInfo.Texture,
-                new Vector2(x, y),
-                gumpInfo.UV,
-                ShaderHueTranslator.GetHueVector(0)
-            );
-
-            _text.Draw(batcher, x + gumpInfo.UV.Width + 2, y);
-
-            return ok;
-        }
-
-        protected virtual void OnCheckedChanged() => ValueChanged.Raise(this);
-
-        protected override void OnMouseUp(int x, int y, MouseButtonType button)
-        {
-            if (button == MouseButtonType.Left && MouseIsOver)
+        renderLists.AddGumpNoAtlas
+        (
+            (batcher) =>
             {
-                IsChecked = !IsChecked;
-            }
-        }
+                _text.Draw(batcher, x + sourceRectangle.Width + 2, y, layerDepth);
 
-        public override void Dispose()
-        {
-            base.Dispose();
-            _text?.Destroy();
-        }
+                return true;
+            }
+        );
+
+        return ok;
+    }
+
+    protected virtual void OnCheckedChanged() => ValueChanged.Raise(this);
+
+    protected override void OnMouseUp(int x, int y, MouseButtonType button)
+    {
+        if (button == MouseButtonType.Left && MouseIsOver) IsChecked = !IsChecked;
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _text?.Destroy();
     }
 }

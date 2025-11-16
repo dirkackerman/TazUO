@@ -1,6 +1,7 @@
 ﻿// SPDX-License-Identifier: BSD-2-Clause
 
 using System;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Gumps;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
@@ -8,244 +9,229 @@ using ClassicUO.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class ColorPickerBox : Gump
 {
-    public class ColorPickerBox : Gump
+    private readonly int _cellHeight;
+    private readonly int _cellWidth;
+    private readonly int _columns;
+    private readonly ushort[] _customPallete;
+    private int _graduation, _selectedIndex;
+    private ushort[] _hues;
+    private bool _needToFileeBoxes = true;
+    private readonly int _rows;
+
+
+    public ColorPickerBox
+    (
+        World world,
+        int x,
+        int y,
+        int rows = 10,
+        int columns = 20,
+        int cellW = 8,
+        int cellH = 8,
+        ushort[] customPallete = null
+    ) : base(world, 0, 0)
     {
-        private readonly int _cellHeight;
-        private readonly int _cellWidth;
-        private readonly int _columns;
-        private readonly ushort[] _customPallete;
-        private int _graduation, _selectedIndex;
-        private ushort[] _hues;
-        private bool _needToFileeBoxes = true;
-        private readonly int _rows;
+        X = x;
+        Y = y;
+        Width = columns * cellW;
+        Height = rows * cellH;
+        _rows = rows;
+        _columns = columns;
+        _cellWidth = cellW;
+        _cellHeight = cellH;
+
+        _customPallete = customPallete;
+        AcceptMouseInput = true;
 
 
-        public ColorPickerBox
-        (
-            World world,
-            int x,
-            int y,
-            int rows = 10,
-            int columns = 20,
-            int cellW = 8,
-            int cellH = 8,
-            ushort[] customPallete = null
-        ) : base(world, 0, 0)
+        Graduation = 1;
+        SelectedIndex = 0;
+    }
+
+
+    public event EventHandler ColorSelectedIndex;
+
+    public bool ShowLivePreview { get; set; }
+
+    public ushort[] Hues
+    {
+        get
         {
-            X = x;
-            Y = y;
-            Width = columns * cellW;
-            Height = rows * cellH;
-            _rows = rows;
-            _columns = columns;
-            _cellWidth = cellW;
-            _cellHeight = cellH;
+            CreateTexture();
 
-            _customPallete = customPallete;
-            AcceptMouseInput = true;
-
-
-            Graduation = 1;
-            SelectedIndex = 0;
+            return _hues;
         }
+    }
 
-
-        public event EventHandler ColorSelectedIndex;
-
-        public bool ShowLivePreview { get; set; }
-
-        public ushort[] Hues
+    public int Graduation
+    {
+        get => _graduation;
+        set
         {
-            get
+            if (_graduation != value)
             {
+                _graduation = value;
+
+                _needToFileeBoxes = true;
+
                 CreateTexture();
-
-                return _hues;
+                ColorSelectedIndex.Raise();
             }
         }
+    }
 
-        public int Graduation
+    public int SelectedIndex
+    {
+        get => _selectedIndex;
+        set
         {
-            get => _graduation;
-            set
+            if (value < 0 || value >= _hues.Length) return;
+
+            if (_selectedIndex != value)
             {
-                if (_graduation != value)
-                {
-                    _graduation = value;
-
-                    _needToFileeBoxes = true;
-
-                    CreateTexture();
-                    ColorSelectedIndex.Raise();
-                }
+                _selectedIndex = value;
+                ColorSelectedIndex.Raise();
             }
         }
+    }
 
-        public int SelectedIndex
+    public ushort SelectedHue
+    {
+        get => SelectedIndex < 0 || SelectedIndex >= _hues.Length ? (ushort)0 : _hues[SelectedIndex];
+        set => SelectHue(value);
+    }
+
+
+    public override void PreDraw()
+    {
+        if (IsDisposed) return;
+
+        if (_needToFileeBoxes) CreateTexture();
+
+        if (ShowLivePreview)
         {
-            get => _selectedIndex;
-            set
-            {
-                if (value < 0 || value >= _hues.Length)
-                {
-                    return;
-                }
+            int xx = Mouse.Position.X - X - ParentX;
+            int yy = Mouse.Position.Y - Y - ParentY;
 
-                if (_selectedIndex != value)
-                {
-                    _selectedIndex = value;
-                    ColorSelectedIndex.Raise();
-                }
-            }
+            if (Bounds.Contains(Mouse.Position.X, Mouse.Position.Y)) SetSelectedIndex(xx, yy);
         }
 
-        public ushort SelectedHue
+        base.PreDraw();
+    }
+
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        float colorLayerDepth = layerDepthRef += 0.001f;
+        float selectorLayerDepth = layerDepthRef += 0.001f;
+
+        Texture2D texture = SolidColorTextureCache.GetTexture(Color.White);
+
+        for (int i = 0; i < _rows; i++)
+        for (int j = 0; j < _columns; j++)
         {
-            get => SelectedIndex < 0 || SelectedIndex >= _hues.Length ? (ushort)0 : _hues[SelectedIndex];
-            set => SelectHue(value);
-        }
+            Vector3 hueVector = ShaderHueTranslator.GetHueVector(_hues[i * _columns + j]);
 
+            Rectangle rect = new(x + j * _cellWidth, y + i * _cellHeight, _cellWidth, _cellHeight);
 
-        public override void PreDraw()
-        {
-            if (IsDisposed)
-            {
-                return;
-            }
-
-            if (_needToFileeBoxes)
-            {
-                CreateTexture();
-            }
-
-            if (ShowLivePreview)
-            {
-                int xx = Mouse.Position.X - X - ParentX;
-                int yy = Mouse.Position.Y - Y - ParentY;
-
-                if (Bounds.Contains(Mouse.Position.X, Mouse.Position.Y))
+            renderLists.AddGumpNoAtlas(
+                batcher =>
                 {
-                    SetSelectedIndex(xx, yy);
-                }
-            }
-
-            base.PreDraw();
-        }
-
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            Texture2D texture = SolidColorTextureCache.GetTexture(Color.White);
-
-            var rect = new Rectangle(0, 0, _cellWidth, _cellHeight);
-
-            Vector3 hueVector;
-
-            for (int i = 0; i < _rows; i++)
-            {
-                for (int j = 0; j < _columns; j++)
-                {
-                    hueVector = ShaderHueTranslator.GetHueVector(_hues[i * _columns + j]);
-
-                    rect.X = x + j * _cellWidth;
-                    rect.Y = y + i * _cellHeight;
-
                     batcher.Draw
                     (
                         texture,
                         rect,
-                        hueVector
+                        hueVector,
+                        colorLayerDepth
                     );
+                    return true;
                 }
-            }
-
-            hueVector = ShaderHueTranslator.GetHueVector(0);
-
-            if (_hues.Length > 1)
-            {
-                rect.X = (int)(x + Width / _columns * (SelectedIndex % _columns + .5f) - 1);
-                rect.Y = (int)(y + Height / _rows * (SelectedIndex / _columns + .5f) - 1);
-                rect.Width = 2;
-                rect.Height = 2;
-
-                batcher.Draw
-                (
-                    SolidColorTextureCache.GetTexture(Color.White),
-                    rect,
-                    hueVector
-                );
-            }
-
-            return base.Draw(batcher, x, y);
+            );
         }
 
-
-        protected override void OnMouseUp(int x, int y, MouseButtonType button)
+        if (_hues.Length > 1)
         {
-            if (button == MouseButtonType.Left)
-            {
-                SetSelectedIndex(x, y);
-            }
+            Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+
+            Rectangle rect = new(
+                (int)(x + Width / _columns * (SelectedIndex % _columns + .5f) - 1),
+                (int)(y + Height / _rows * (SelectedIndex / _columns + .5f) - 1),
+                rect.Width = 2,
+                rect.Height = 2
+            );
+
+            renderLists.AddGumpNoAtlas(
+                batcher =>
+                {
+                    batcher.Draw
+                    (
+                        SolidColorTextureCache.GetTexture(Color.White),
+                        rect,
+                        hueVector,
+                        selectorLayerDepth
+                    );
+                    return true;
+                }
+            );
         }
 
-        private void SetSelectedIndex(int x, int y)
-        {
-            int row = x / (Width / _columns);
-            int column = y / (Height / _rows);
-            SelectedIndex = row + column * _columns;
-        }
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+    }
 
-        private void CreateTexture()
+    protected override void OnMouseUp(int x, int y, MouseButtonType button)
+    {
+        if (button == MouseButtonType.Left) SetSelectedIndex(x, y);
+    }
+
+    private void SetSelectedIndex(int x, int y)
+    {
+        int row = x / (Width / _columns);
+        int column = y / (Height / _rows);
+        SelectedIndex = row + column * _columns;
+    }
+
+    private void CreateTexture()
+    {
+        if (!_needToFileeBoxes || IsDisposed) return;
+
+        _needToFileeBoxes = false;
+
+
+        int size = _rows * _columns;
+        ushort startColor = (ushort)(Graduation + 1);
+
+        if (_hues == null || size != _hues.Length) _hues = new ushort[size];
+
+        for (int y = 0; y < _rows; y++)
+        for (int x = 0; x < _columns; x++)
         {
-            if (!_needToFileeBoxes || IsDisposed)
+            ushort hue = (ushort)((_customPallete?[y * _columns + x] ?? startColor) + 1);
+
+            _hues[y * _columns + x] = hue;
+
+            startColor += 5;
+        }
+    }
+
+    private void SelectHue(ushort desiredHue)
+    {
+        // revert setting the Graduation later if it does not contain the desired color
+        int previousGraduation = Graduation;
+
+        // When calculating the color from the graduation, it's incremented twice by one in CreateTexture()
+        // To revert this we could subtract two but to avoid negative values, adding 3 does the same thing because of the modulo
+        Graduation = (desiredHue + 3) % 5;
+
+        for (int i = 0; i < Hues.Length; i++)
+            if (Hues[i] == desiredHue)
             {
+                SelectedIndex = i;
                 return;
             }
 
-            _needToFileeBoxes = false;
-
-
-            int size = _rows * _columns;
-            ushort startColor = (ushort)(Graduation + 1);
-
-            if (_hues == null || size != _hues.Length)
-            {
-                _hues = new ushort[size];
-            }
-
-            for (int y = 0; y < _rows; y++)
-            {
-                for (int x = 0; x < _columns; x++)
-                {
-                    ushort hue = (ushort)((_customPallete?[y * _columns + x] ?? startColor) + 1);
-
-                    _hues[y * _columns + x] = hue;
-
-                    startColor += 5;
-                }
-            }
-        }
-
-        private void SelectHue(ushort desiredHue)
-        {
-            // revert setting the Graduation later if it does not contain the desired color
-            int previousGraduation = Graduation;
-
-            // When calculating the color from the graduation, it's incremented twice by one in CreateTexture()
-            // To revert this we could subtract two but to avoid negative values, adding 3 does the same thing because of the modulo
-            Graduation = (desiredHue + 3) % 5;
-
-            for (int i = 0; i < Hues.Length; i++)
-            {
-                if (Hues[i] == desiredHue)
-                {
-                    SelectedIndex = i;
-                    return;
-                }
-            }
-
-            Graduation = previousGraduation;
-        }
+        Graduation = previousGraduation;
     }
 }

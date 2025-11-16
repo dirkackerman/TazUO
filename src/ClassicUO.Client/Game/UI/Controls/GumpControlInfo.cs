@@ -1,11 +1,10 @@
 ﻿// SPDX-License-Identifier: BSD-2-Clause
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public enum UILayer
 {
-    public enum UILayer
-    {
-        Over,
-        Default,
-        Under
-    }
+    Over,
+    Default,
+    Under
 }

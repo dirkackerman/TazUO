@@ -76,27 +76,13 @@ namespace ClassicUO.Game.UI.Gumps
             return false;
         }
 
-
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override void PreDraw()
         {
-            if (IsDisposed)
-            {
-                return false;
-            }
-
             byte index = (byte) World.Player.Abilities[IsPrimary ? 0 : 1];
 
             if ((index & 0x80) != 0)
-            {
                 _button.Hue = 38;
-            }
-            else if (_button.Hue != 0)
-            {
-                _button.Hue = 0;
-            }
-
-
-            return base.Draw(batcher, x, y);
+            else if (_button.Hue != 0) _button.Hue = 0;
         }
 
         public override void Save(XmlTextWriter writer)

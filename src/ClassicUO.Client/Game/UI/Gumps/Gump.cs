@@ -7,6 +7,7 @@ using System.Xml;
 using ClassicUO.Configuration;
 using ClassicUO.Game.GameObjects;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
@@ -30,7 +31,7 @@ namespace ClassicUO.Game.UI.Gumps
         public string PacketGumpText { get; set; } = string.Empty;
 
         public World World { get; }
-        
+
         public virtual bool ShouldBeSaved => true;
 
         public bool CanBeSaved => ShouldBeSaved && (GumpType != Gumps.GumpType.None || ServerSerial != 0);
@@ -276,7 +277,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y) => IsVisible && base.Draw(batcher, x, y);
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef) => IsVisible && base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
 
         public override void OnButtonClick(int buttonID)
         {

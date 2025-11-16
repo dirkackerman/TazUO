@@ -26,7 +26,7 @@ In order to run this client you'll need to legally obtain a
 copy of the Ultima Online Classic Client.
 
 Using a custom client to connect to official UO servers is
-strictly forbidden. 
+strictly forbidden.
 We do not assume any responsibility of the usage of this client.
 
 
@@ -70,14 +70,20 @@ Ultima Online(R) 2021 Electronic Arts Inc. All Rights Reserved.
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+            float layerDepth = layerDepthRef;
 
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-            batcher.DrawString(Fonts.Bold, CREDITS, x + _offset.X, y + _offset.Y, hueVector);
-
+            renderLists.AddGumpNoAtlas(
+                batcher =>
+                {
+                    batcher.DrawString(Fonts.Bold, CREDITS, x + _offset.X, y + _offset.Y, hueVector, layerDepth);
+                    return true;
+                }
+            );
             return true;
         }
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using ClassicUO.Assets;
 using ClassicUO.Configuration;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
@@ -1837,7 +1838,7 @@ public class BaseOptionsGump : Gump
             {
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
 
-                batcher.Draw(_texture, new Vector2(x, y), new Rectangle(0, 0, Width, Height), hueVector);
+                batcher.Draw(Texture, new Vector2(x, y), new Rectangle(0, 0, Width, Height), hueVector);
             }
 
             if (DisplayBorder)
@@ -2436,18 +2437,36 @@ public class BaseOptionsGump : Gump
                         base.Update();
                     }
 
-                    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+                    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
                     {
-                        if (DrawBackgroundCurrentIndex && MouseIsOver && !string.IsNullOrWhiteSpace(_label.Text))
-                        {
-                            Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+                        float layerDepth = layerDepthRef;
 
-                            batcher.Draw(SolidColorTextureCache.GetTexture(Color.Gray), new Rectangle(x, y + 2, Width - 4, Height - 4), hueVector);
-                        }
+                        Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-                        _label.Draw(batcher, x, y);
+                        renderLists.AddGumpNoAtlas(
+                            batcher =>
+                            {
+                                if (DrawBackgroundCurrentIndex && MouseIsOver && !string.IsNullOrWhiteSpace(_label.Text))
+                                    batcher.Draw
+                                    (
+                                        SolidColorTextureCache.GetTexture(Color.Gray),
+                                        new Rectangle
+                                        (
+                                            x,
+                                            y + 2,
+                                            Width - 4,
+                                            Height - 4
+                                        ),
+                                        hueVector,
+                                        layerDepth
+                                    );
 
-                        return base.Draw(batcher, x, y);
+                                _label.Draw(batcher, x, y, _label.FontColor);
+                                return true;
+                            }
+                        );
+
+                        return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
                     }
                 }
             }

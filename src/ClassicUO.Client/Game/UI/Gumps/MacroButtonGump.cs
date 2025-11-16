@@ -5,6 +5,7 @@ using System.Xml;
 using ClassicUO.Assets;
 using ClassicUO.Configuration;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
@@ -155,18 +156,12 @@ namespace ClassicUO.Game.UI.Gumps
 
             Point offset = Mouse.LDragOffset;
 
-            if (ProfileManager.CurrentProfile.CastSpellsByOneClick && button == MouseButtonType.Left && !Keyboard.Alt && Math.Abs(offset.X) < 5 && Math.Abs(offset.Y) < 5)
-            {
-                RunMacro();
-            }
+            if (ProfileManager.CurrentProfile.CastSpellsByOneClick && button == MouseButtonType.Left && !Keyboard.Alt && Math.Abs(offset.X) < 5 && Math.Abs(offset.Y) < 5) RunMacro();
         }
 
         protected override bool OnMouseDoubleClick(int x, int y, MouseButtonType button)
         {
-            if (ProfileManager.CurrentProfile.CastSpellsByOneClick || button != MouseButtonType.Left)
-            {
-                return false;
-            }
+            if (ProfileManager.CurrentProfile.CastSpellsByOneClick || button != MouseButtonType.Left) return false;
 
             RunMacro();
 
@@ -183,60 +178,85 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
             if (!IsVisible) return false;
 
-            batcher.Draw
-            (
-                backgroundTexture,
-                new Rectangle
+            float layerDepth = layerDepthRef;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw
                 (
-                    x,
-                    y,
-                    Width,
-                    Height
-                ),
-                hueVector
-            );
+                    backgroundTexture,
+                    new Rectangle
+                    (
+                        x,
+                        y,
+                        Width,
+                        Height
+                    ),
+                    hueVector,
+                    layerDepth
+                );
+
+                return true;
+            });
+
 
             if (Graphic.HasValue)
             {
                 //var texture = GumpsLoader.Instance.GetGumpTexture(, out Rectangle bounds);
-                ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(Graphic.Value);
+                SpriteInfo texture = Client.Game.UO.Gumps.GetGump(Graphic.Value);
                 if (texture.Texture != null)
                 {
                     var rect = new Rectangle(x, y, Width, Height);
-                    batcher.Draw
-                    (
-                        texture.Texture,
-                        rect,
-                        texture.UV,
-                        hueVector
-                    );
+
+                    renderLists.AddGumpNoAtlas(batcher =>
+                    {
+                        batcher.Draw
+                        (
+                            texture.Texture,
+                            rect,
+                            texture.UV,
+                            hueVector,
+                            layerDepth
+                        );
+                        return true;
+                    });
+
                 }
             }
             else
-            {
-                batcher.DrawRectangle
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    batcher.DrawRectangle
                     (
                         SolidColorTextureCache.GetTexture(Color.Gray),
                         x,
                         y,
                         Width,
                         Height,
-                        hueVector
+                        hueVector,
+                        layerDepth
                     );
-            }
+                    return true;
+                });
 
             if (!HideLabel && _gText != null)
             {
                 _gText.Hue = (ushort)(MouseIsOver ? 53 : 0x03b2);
-                _gText.Draw(batcher, x, y + ((Height >> 1) - (_gText.Height >> 1)), Alpha);
+
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    _gText.Draw(batcher, x, y + ((Height >> 1) - (_gText.Height >> 1)), Alpha);
+
+                    return true;
+                });
             }
 
 
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
 
             return true;
         }

@@ -3,6 +3,7 @@
 using System;
 using System.Text;
 using System.Xml;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Input;
 using ClassicUO.Network;
@@ -87,13 +88,9 @@ namespace ClassicUO.Game.UI.Gumps
                 var sb = new ValueStringBuilder(span);
 
                 if (IsMinimized)
-                {
                     sb.Append($"Ping: {_ping} ms");
-                }
                 else
-                {
                     sb.Append($"Ping: {_ping} ms\n{"In:"} {NetStatistics.GetSizeAdaptive(_deltaBytesReceived),-6} {"Out:"} {NetStatistics.GetSizeAdaptive(_deltaBytesSent),-6}");
-                }
 
                 _cacheText = sb.ToString();
 
@@ -107,41 +104,38 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            if (!base.Draw(batcher, x, y))
-            {
-                return false;
-            }
+            if (!base.AddToRenderLists(renderLists, x, y, ref layerDepthRef)) return false;
+            float layerDepth = layerDepthRef;
 
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
             if (_ping < 150)
-            {
                 hueVector.X = 0x44; // green
-            }
             else if (_ping < 200)
-            {
                 hueVector.X = 0x34; // yellow
-            }
             else if (_ping < 300)
-            {
                 hueVector.X = 0x31; // orange
-            }
             else
-            {
                 hueVector.X = 0x20; // red
-            }
 
             hueVector.Y = 1;
 
-            batcher.DrawString
-            (
-                Fonts.Bold,
-                _cacheText,
-                x + 10,
-                y + 10,
-                hueVector
+            renderLists.AddGumpNoAtlas(
+                batcher =>
+                {
+                    batcher.DrawString
+                    (
+                        Fonts.Bold,
+                        _cacheText,
+                        x + 10,
+                        y + 10,
+                        hueVector,
+                        layerDepth
+                    );
+                    return true;
+                }
             );
 
             return true;

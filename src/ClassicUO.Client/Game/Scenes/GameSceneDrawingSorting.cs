@@ -47,26 +47,7 @@ namespace ClassicUO.Game.Scenes
             _oldPlayerZ;
         private int _foliageCount;
 
-
-        private readonly List<GameObject> _renderListStatics = new List<GameObject>();
-        private readonly List<GameObject> _renderListTransparentObjects = new List<GameObject>();
-        private readonly List<GameObject> _renderListAnimations = new List<GameObject>();
-        private readonly List<GameObject> _renderListEffects = new List<GameObject>();
-
-        //// statics
-        //private GameObject _renderListStaticsHead, _renderList;
-        //private int _renderListStaticsCount;
-
-        //// lands
-        //private GameObject _renderListTransparentObjectsHead, _renderListTransparentObjects;
-        //private int _renderListTransparentObjectsCount;
-
-        //// animations
-        //private GameObject _renderListAnimationsHead, _renderListAnimations;
-        //private int _renderListAnimationCount;
-
-        //private GameObject _renderListEffectsHead, _renderListEffects;
-        //private int _renderListEffectCount;
+        private readonly RenderLists _renderLists = new();
 
         public sbyte FoliageIndex { get; private set; }
 
@@ -612,9 +593,9 @@ namespace ClassicUO.Game.Scenes
             return found;
         }
 
-        private void PushToRenderList(
+        private void PushToRenderQueue(
             GameObject obj,
-            List<GameObject> renderList,
+            bool isTransparent,
             bool allowSelection
         )
         {
@@ -644,14 +625,7 @@ namespace ClassicUO.Game.Scenes
                 }
             }
 
-            if (obj.AlphaHue != byte.MaxValue)
-            {
-                _renderListTransparentObjects.Add(obj);
-            }
-            else
-            {
-                renderList.Add(obj);
-            }
+            _renderLists.Add(obj, isTransparent || obj.AlphaHue != byte.MaxValue);
         }
 
         private unsafe bool AddTileToRenderList(
@@ -705,9 +679,9 @@ namespace ClassicUO.Game.Scenes
                             continue;
                         }
 
-                        PushToRenderList(
+                        PushToRenderQueue(
                             obj,
-                            _renderListStatics,
+                            false,
                             true
                         );
                         break;
@@ -784,17 +758,17 @@ namespace ClassicUO.Game.Scenes
                                 )
                             )
                             {
-                                PushToRenderList(
+                                PushToRenderQueue(
                                     obj,
-                                    _renderListTransparentObjects,
+                                    true,
                                     allowSelection
                                 );
                             }
                             else
                             {
-                                PushToRenderList(
+                                PushToRenderQueue(
                                     obj,
-                                    _renderListStatics,
+                                    false,
                                     allowSelection
                                 );
                             }
@@ -870,17 +844,17 @@ namespace ClassicUO.Game.Scenes
                                 )
                             )
                             {
-                                PushToRenderList(
+                                PushToRenderQueue(
                                     obj,
-                                    _renderListTransparentObjects,
+                                    true,
                                     allowSelection
                                 );
                             }
                             else
                             {
-                                PushToRenderList(
+                                PushToRenderQueue(
                                     obj,
-                                    _renderListStatics,
+                                    false,
                                     allowSelection
                                 );
                             }
@@ -922,9 +896,9 @@ namespace ClassicUO.Game.Scenes
 
                             obj.AllowedToDraw = !HasSurfaceOverhead(mobile);
 
-                            PushToRenderList(
+                            PushToRenderQueue(
                                 obj,
-                                _renderListAnimations,
+                                false,
                                 allowSelection
                             );
                             break;
@@ -1006,17 +980,17 @@ namespace ClassicUO.Game.Scenes
 
                             if (item.IsCorpse)
                             {
-                                PushToRenderList(
+                                PushToRenderQueue(
                                     obj,
-                                    _renderListAnimations,
+                                    false,
                                     allowSelection
                                 );
                             }
                             else
                             {
-                                PushToRenderList(
+                                PushToRenderQueue(
                                     obj,
-                                    _renderListStatics,
+                                    false,
                                     true
                                 );
                             }
@@ -1047,11 +1021,9 @@ namespace ClassicUO.Game.Scenes
                         if (effect.IsMoving) // TODO: check for typeof(MovingEffect) ?
                         { }
 
-                        //PushToRenderList(obj, ref _renderList, ref _renderListStaticsHead, ref _renderListStaticsCount, false);
-
-                        PushToRenderList(
+                        PushToRenderQueue(
                             obj,
-                            _renderListEffects,
+                            false,
                             false
                         );
                         break;

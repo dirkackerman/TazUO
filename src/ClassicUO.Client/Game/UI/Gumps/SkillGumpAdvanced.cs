@@ -16,6 +16,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -545,22 +546,29 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            if (!IsVisible) return false;
+            if (!IsVisible || IsDisposed) return false;
 
+            float layerDepth = layerDepthRef;
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-            batcher.DrawRectangle(
-                SolidColorTextureCache.GetTexture(Color.Gray),
-                x,
-                y,
-                Width,
-                Height,
-                hueVector
+            renderLists.AddGumpNoAtlas(
+                batcher =>
+                {
+                    batcher.DrawRectangle(
+                        SolidColorTextureCache.GetTexture(Color.Gray),
+                        x,
+                        y,
+                        Width,
+                        Height,
+                        hueVector,
+                        layerDepth
+                    );
+                    return true;
+                }
             );
-
-            return base.Draw(batcher, x, y);
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
         }
 
         public void ForceUpdate() => _updateSkillsNeeded = true;

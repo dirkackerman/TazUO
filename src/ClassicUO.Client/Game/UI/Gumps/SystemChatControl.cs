@@ -496,34 +496,38 @@ namespace ClassicUO.Game.UI.Gumps
             base.Update();
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
             int yy = TextBoxControl.Y + y - 20;
 
             LinkedListNode<ChatLineTime> last = _textEntries.Last;
 
-            while (last != null)
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                LinkedListNode<ChatLineTime> prev = last.Previous;
-
-                if (last.Value.IsDisposed)
+                while (last != null)
                 {
-                    _textEntries.Remove(last);
-                }
-                else
-                {
-                    yy -= last.Value.TextHeight;
+                    LinkedListNode<ChatLineTime> prev = last.Previous;
 
-                    if (yy >= y)
+                    if (last.Value.IsDisposed)
                     {
-                        last.Value.Draw(batcher, x + 2, yy);
+                        _textEntries.Remove(last);
                     }
+                    else
+                    {
+                        yy -= last.Value.TextHeight;
+
+                        if (yy >= y)
+                        {
+                            last.Value.Draw(batcher, x + 2, yy);
+                        }
+                    }
+
+                    last = prev;
                 }
+                return true;
+            });
 
-                last = prev;
-            }
-
-            return base.Draw(batcher, x, y);
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
         }
 
         protected override void OnKeyDown(SDL.SDL_Keycode key, SDL.SDL_Keymod mod)
@@ -1009,7 +1013,7 @@ namespace ClassicUO.Game.UI.Gumps
             }
 
 
-            public bool Draw(UltimaBatcher2D batcher, int x, int y) => !IsDisposed && textBox.Draw(batcher, x, y);
+            public bool Draw(UltimaBatcher2D batcher, int x, int y) => !IsDisposed && textBox.Draw(batcher, x, y, textBox.FontColor);
 
             public override string ToString() => Text;
 

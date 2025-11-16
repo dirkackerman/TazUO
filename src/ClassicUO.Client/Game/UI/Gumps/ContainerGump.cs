@@ -695,12 +695,13 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
 
             if (CUOEnviroment.Debug && !IsMinimized)
             {
+                float layerDepth = layerDepthRef;
                 Rectangle bounds = _data.Bounds;
                 float scale = GetScale();
                 ushort boundX = (ushort)(bounds.X * scale);
@@ -710,13 +711,20 @@ namespace ClassicUO.Game.UI.Gumps
 
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-                batcher.DrawRectangle(
-                    SolidColorTextureCache.GetTexture(Color.Red),
-                    x + boundX,
-                    y + boundY,
-                    boundWidth - boundX,
-                    boundHeight - boundY,
-                    hueVector
+                renderLists.AddGumpNoAtlas(
+                    batcher =>
+                    {
+                        batcher.DrawRectangle(
+                            SolidColorTextureCache.GetTexture(Color.Red),
+                            x + boundX,
+                            y + boundY,
+                            boundWidth - boundX,
+                            boundHeight - boundY,
+                            hueVector,
+                            layerDepth
+                        );
+                        return true;
+                    }
                 );
             }
 

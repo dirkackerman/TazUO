@@ -48,10 +48,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
                 _buttonOver = 0x15A5;
                 const ushort HUE = 0x0386;
 
-                if (Client.Game.UO.Version >= ClientVersion.CV_500A)
-                {
-                    Add(new GumpPic(0, 0, 0x2329, 0));
-                }
+                if (Client.Game.UO.Version >= ClientVersion.CV_500A) Add(new GumpPic(0, 0, 0x2329, 0));
 
                 //UO Flag
                 Add(new GumpPic(0, 4, 0x15A0, 0) { AcceptKeyboardInput = false });
@@ -79,10 +76,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
                     }
                 );
 
-                if (Client.Game.UO.Version < ClientVersion.CV_500A)
-                {
-                    Add(new GumpPic(286, 45, 0x058A, 0));
-                }
+                if (Client.Game.UO.Version < ClientVersion.CV_500A) Add(new GumpPic(286, 45, 0x058A, 0));
 
                 // Credits
                 Add
@@ -367,10 +361,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
             if (accts.Length > 0)
             {
                 _textboxAccount.ContextMenu = new ContextMenuControl(this);
-                foreach (string acct in accts)
-                {
-                    _textboxAccount.ContextMenu.Add(new ContextMenuItemEntry(acct, () => { _textboxAccount.SetText(acct); }));
-                }
+                foreach (string acct in accts) _textboxAccount.ContextMenu.Add(new ContextMenuItemEntry(acct, () => { _textboxAccount.SetText(acct); }));
                 _textboxAccount.SetTooltip("Right click to select another account.");
                 _textboxAccount.MouseUp += (s, e) =>
                 {
@@ -522,13 +513,9 @@ namespace ClassicUO.Game.UI.Gumps.Login
 
 
             if (!string.IsNullOrEmpty(_textboxAccount.Text))
-            {
                 _passwordFake.SetKeyboardFocus();
-            }
             else
-            {
                 _textboxAccount.SetKeyboardFocus();
-            }
         }
 
         protected override void OnControllerButtonUp(SDL.SDL_GamepadButton button)
@@ -539,10 +526,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
                 SaveCheckboxStatus();
                 LoginScene ls = Client.Game.GetScene<LoginScene>();
 
-                if (ls.CurrentLoginStep == LoginSteps.Main)
-                {
-                    ls.Connect(_textboxAccount.Text, _passwordFake.RealText);
-                }
+                if (ls.CurrentLoginStep == LoginSteps.Main) ls.Connect(_textboxAccount.Text, _passwordFake.RealText);
             }
         }
 
@@ -551,10 +535,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
             SaveCheckboxStatus();
             LoginScene ls = Client.Game.GetScene<LoginScene>();
 
-            if (ls.CurrentLoginStep == LoginSteps.Main)
-            {
-                ls.Connect(_textboxAccount.Text, _passwordFake.RealText);
-            }
+            if (ls.CurrentLoginStep == LoginSteps.Main) ls.Connect(_textboxAccount.Text, _passwordFake.RealText);
         }
 
         private void SaveCheckboxStatus()
@@ -565,10 +546,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
 
         public override void Update()
         {
-            if (IsDisposed)
-            {
-                return;
-            }
+            if (IsDisposed) return;
 
             if (World.Instance != null && World.Instance.InGame)
             {
@@ -587,27 +565,15 @@ namespace ClassicUO.Game.UI.Gumps.Login
 
             if (_passwordFake.HasKeyboardFocus)
             {
-                if (_passwordFake.Hue != 0x0021)
-                {
-                    _passwordFake.Hue = 0x0021;
-                }
+                if (_passwordFake.Hue != 0x0021) _passwordFake.Hue = 0x0021;
             }
-            else if (_passwordFake.Hue != 0)
-            {
-                _passwordFake.Hue = 0;
-            }
+            else if (_passwordFake.Hue != 0) _passwordFake.Hue = 0;
 
             if (_textboxAccount.HasKeyboardFocus)
             {
-                if (_textboxAccount.Hue != 0x0021)
-                {
-                    _textboxAccount.Hue = 0x0021;
-                }
+                if (_textboxAccount.Hue != 0x0021) _textboxAccount.Hue = 0x0021;
             }
-            else if (_textboxAccount.Hue != 0)
-            {
-                _textboxAccount.Hue = 0;
-            }
+            else if (_textboxAccount.Hue != 0) _textboxAccount.Hue = 0;
         }
 
         public override void OnButtonClick(int buttonID)
@@ -617,10 +583,7 @@ namespace ClassicUO.Game.UI.Gumps.Login
                 case Buttons.NextArrow:
                     SaveCheckboxStatus();
 
-                    if (!_textboxAccount.IsDisposed)
-                    {
-                        Client.Game.GetScene<LoginScene>().Connect(_textboxAccount.Text, _passwordFake.RealText);
-                    }
+                    if (!_textboxAccount.IsDisposed) Client.Game.GetScene<LoginScene>().Connect(_textboxAccount.Text, _passwordFake.RealText);
 
                     break;
 
@@ -709,22 +672,16 @@ namespace ClassicUO.Game.UI.Gumps.Login
                 }
             }
 
-            protected override void DrawCaret(UltimaBatcher2D batcher, int x, int y)
+            protected override void DrawCaret(UltimaBatcher2D batcher, int x, int y, float layerDepth)
             {
-                if (HasKeyboardFocus)
-                {
-                    _rendererCaret.Draw(batcher, x + _caretScreenPosition.X, y + _caretScreenPosition.Y);
-                }
+                if (HasKeyboardFocus) _rendererCaret.Draw(batcher, x + _caretScreenPosition.X, y + _caretScreenPosition.Y, layerDepth);
             }
 
             protected override void OnMouseDown(int x, int y, MouseButtonType button)
             {
                 base.OnMouseDown(x, y, button);
 
-                if (button == MouseButtonType.Left)
-                {
-                    UpdateCaretScreenPosition();
-                }
+                if (button == MouseButtonType.Left) UpdateCaretScreenPosition();
             }
 
             protected override void OnKeyDown(SDL.SDL_Keycode key, SDL.SDL_Keymod mod)
@@ -746,13 +703,9 @@ namespace ClassicUO.Game.UI.Gumps.Login
             protected override void OnTextChanged()
             {
                 if (Text.Length > 0)
-                {
                     _rendererText.Text = new string('*', Text.Length);
-                }
                 else
-                {
                     _rendererText.Text = string.Empty;
-                }
 
                 base.OnTextChanged();
                 UpdateCaretScreenPosition();
@@ -767,17 +720,24 @@ namespace ClassicUO.Game.UI.Gumps.Login
 
             private new void UpdateCaretScreenPosition() => _caretScreenPosition = _rendererText.GetCaretPosition(Stb.CursorIndex);
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
-                if (batcher.ClipBegin(x, y, Width, Height))
-                {
-                    DrawSelection(batcher, x, y);
+                float layerDepth = layerDepthRef;
+                renderLists.AddGumpNoAtlas(
+                    batcher =>
+                    {
+                        if (batcher.ClipBegin(x, y, Width, Height))
+                        {
+                            DrawSelection(batcher, x, y, layerDepth);
 
-                    _rendererText.Draw(batcher, x, y);
+                            _rendererText.Draw(batcher, x, y, layerDepth);
 
-                    DrawCaret(batcher, x, y);
-                    batcher.ClipEnd();
-                }
+                            DrawCaret(batcher, x, y, layerDepth);
+                            batcher.ClipEnd();
+                        }
+                        return true;
+                    }
+                );
 
                 return true;
             }

@@ -22,13 +22,9 @@ using Microsoft.Xna.Framework.Graphics;
 using SDL3;
 using System.Text.Json.Serialization;
 using static ClassicUO.Game.UI.Gumps.WorldMapGump;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Formats.Png;
-using ClassicUO.Network.Encryption;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.Threading;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps;
 
@@ -1954,7 +1950,7 @@ public class WorldMapGump : ResizableGump
 
     #region Draw
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
     {
         if (IsDisposed || !IsVisible || !World.InGame)
         {
@@ -1975,7 +1971,7 @@ public class WorldMapGump : ResizableGump
             }
         }
 
-
+        float layerDepth = layerDepthRef;
         int gX = x + 4;
         int gY = y + 4;
         int gWidth = Width - 8;
@@ -1994,110 +1990,106 @@ public class WorldMapGump : ResizableGump
 
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-        batcher.Draw
-        (
-            SolidColorTextureCache.GetTexture(Color.Black),
-            new Rectangle
-            (
-                gX,
-                gY,
-                gWidth,
-                gHeight
-            ),
-            hueVector
-        );
-
-
-        if (_mapLoading == 1)
-        {
-            if (batcher.ClipBegin(gX, gY, gWidth, gHeight))
+        renderLists.AddGumpNoAtlas(batcher =>
             {
-                ReadOnlySpan<char> str = "Please wait, I'm making the map file...".AsSpan();
-                //str = str[..(str.Length - (int)_mapLoadingTime % 3)];
-
-                //if (Time.Ticks > _mapLoadingTime)
-                //    _mapLoadingTime = Time.Ticks + 1000;
-
-                Vector2 strSize = Fonts.Bold.MeasureString(str);
-                Vector2 pos = strSize * -0.5f;
-                pos.X += gX + halfWidth;
-                pos.Y += gY + halfHeight;
-                batcher.DrawString(Fonts.Bold, str, pos, new Vector3(38, 1, 1));
-
-                batcher.ClipEnd();
-            }
-        }
-        else if (_mapTexture != null && !_mapTexture.IsDisposed)
-        {
-            if (batcher.ClipBegin(gX, gY, gWidth, gHeight))
-            {
-                var destRect = new Rectangle
-                (
-                    gX + halfWidth,
-                    gY + halfHeight,
-                    size,
-                    size
-                );
-
-                var srcRect = new Rectangle
-                (
-                    centerX - size_zoom_half,
-                    centerY - size_zoom_half,
-                    size_zoom,
-                    size_zoom
-                );
-
-                var origin = new Vector2
-                (
-                    srcRect.Width / 2f,
-                    srcRect.Height / 2f
-                );
-
                 batcher.Draw
                 (
-                    _mapTexture,
-                    destRect,
-                    srcRect,
+                    SolidColorTextureCache.GetTexture(Color.Black),
+                    new Rectangle
+                    (
+                        gX,
+                        gY,
+                        gWidth,
+                        gHeight
+                    ),
                     hueVector,
-                    _flipMap ? Microsoft.Xna.Framework.MathHelper.ToRadians(45) : 0,
-                    origin,
-                    SpriteEffects.None,
-                    0
+                    layerDepth
                 );
 
-                DrawAll
-                (
-                    batcher,
-                    srcRect,
-                    gX,
-                    gY,
-                    halfWidth,
-                    halfHeight
-                );
+                if (_mapLoading == 1)
+                {
+                    if (batcher.ClipBegin(gX, gY, gWidth, gHeight))
+                    {
+                        ReadOnlySpan<char> str = "Please wait, I'm making the map file...".AsSpan();
+                        //str = str[..(str.Length - (int)_mapLoadingTime % 3)];
 
-                batcher.ClipEnd();
-            }
-        }
+                        //if (Time.Ticks > _mapLoadingTime)
+                        //    _mapLoadingTime = Time.Ticks + 1000;
 
-        //foreach (House house in World.HouseManager.Houses)
-        //{
-        //    foreach (Multi multi in house.Components)
-        //    {
-        //        batcher.Draw2D(Textures.GetTexture())
-        //    }
-        //}
+                        Vector2 strSize = Fonts.Bold.MeasureString(str);
+                        Vector2 pos = strSize * -0.5f;
+                        pos.X += gX + halfWidth;
+                        pos.Y += gY + halfHeight;
+                        batcher.DrawString(Fonts.Bold, str, pos, new Vector3(38, 1, 1), layerDepth);
 
+                        batcher.ClipEnd();
+                    }
+                }
+                else if (_mapTexture != null && !_mapTexture.IsDisposed)
+                {
+                    if (batcher.ClipBegin(gX, gY, gWidth, gHeight))
+                    {
+                        var destRect = new Rectangle
+                        (
+                            gX + halfWidth,
+                            gY + halfHeight,
+                            size,
+                            size
+                        );
 
-        return base.Draw(batcher, x, y);
+                        var srcRect = new Rectangle
+                        (
+                            centerX - size_zoom_half,
+                            centerY - size_zoom_half,
+                            size_zoom,
+                            size_zoom
+                        );
+
+                        var origin = new Vector2
+                        (
+                            srcRect.Width / 2f,
+                            srcRect.Height / 2f
+                        );
+
+                        batcher.Draw
+                        (
+                            _mapTexture,
+                            destRect,
+                            srcRect,
+                            hueVector,
+                            _flipMap ? Microsoft.Xna.Framework.MathHelper.ToRadians(45) : 0,
+                            origin,
+                            SpriteEffects.None,
+                            layerDepth
+                        );
+
+                        DrawAll
+                        (
+                            batcher,
+                            srcRect,
+                            gX,
+                            gY,
+                            halfWidth,
+                            halfHeight,
+                            layerDepth
+                        );
+
+                        batcher.ClipEnd();
+                    }
+                }
+                return true;
+            });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
     }
 
-    private void DrawAll(UltimaBatcher2D batcher, Rectangle srcRect, int gX, int gY, int halfWidth, int halfHeight)
+    private void DrawAll(UltimaBatcher2D batcher, Rectangle srcRect, int gX, int gY, int halfWidth, int halfHeight, float depth)
     {
         foreach (Zone zone in _zoneSets.GetZonesForMapIndex(_map.Index))
         {
             if (zone.BoundingRectangle.Intersects(srcRect))
             {
-                DrawZone(batcher, zone, gX, gY, halfWidth, halfHeight, Zoom);
+                DrawZone(batcher, zone, gX, gY, halfWidth, halfHeight, Zoom, depth);
             }
         }
 
@@ -2119,7 +2111,8 @@ public class WorldMapGump : ResizableGump
                         gY,
                         halfWidth,
                         halfHeight,
-                        Zoom
+                        Zoom,
+                        depth
                     );
                 }
             }
@@ -2146,7 +2139,8 @@ public class WorldMapGump : ResizableGump
                         gY,
                         halfWidth,
                         halfHeight,
-                        Zoom
+                        Zoom,
+                        depth
                     ))
                     {
                         lastMarker = marker;
@@ -2156,7 +2150,7 @@ public class WorldMapGump : ResizableGump
 
             if (lastMarker != null)
             {
-                DrawMarkerString(batcher, lastMarker, gX, gY, halfWidth, halfHeight);
+                DrawMarkerString(batcher, lastMarker, gX, gY, halfWidth, halfHeight, depth);
             }
         }
 
@@ -2170,7 +2164,8 @@ public class WorldMapGump : ResizableGump
                 gY,
                 halfWidth,
                 halfHeight,
-                Zoom
+                Zoom,
+                depth
             );
             if (_gotoMarker.MapId == World.Map.Index)
             {
@@ -2188,7 +2183,8 @@ public class WorldMapGump : ResizableGump
                    new Vector2(pdrot.X - 2, pdrot.Y - 2),
                    new Vector2(prot.X, prot.Y),
                    ShaderHueTranslator.GetHueVector(0),
-                   1
+                   1,
+                   depth
                 );
             }
         }
@@ -2213,7 +2209,8 @@ public class WorldMapGump : ResizableGump
                         halfWidth,
                         halfHeight,
                         Zoom,
-                        Color.Red
+                        Color.Red,
+                        depth: depth
                     );
                 }
                 else
@@ -2241,6 +2238,7 @@ public class WorldMapGump : ResizableGump
                                 halfHeight,
                                 Zoom,
                                 Color.Lime,
+                                depth,
                                 true,
                                 true,
                                 _showGroupBar
@@ -2261,7 +2259,8 @@ public class WorldMapGump : ResizableGump
                                 gY,
                                 halfWidth,
                                 halfHeight,
-                                Zoom
+                                Zoom,
+                                depth
                             );
                         }
                     }
@@ -2281,7 +2280,8 @@ public class WorldMapGump : ResizableGump
                     gY,
                     halfWidth,
                     halfHeight,
-                    Zoom
+                    Zoom,
+                    depth
                 );
             }
         }
@@ -2318,6 +2318,7 @@ public class WorldMapGump : ResizableGump
                             halfHeight,
                             Zoom,
                             Color.Yellow,
+                            depth,
                             _showGroupName,
                             true,
                             _showGroupBar
@@ -2337,7 +2338,8 @@ public class WorldMapGump : ResizableGump
                                 gY,
                                 halfWidth,
                                 halfHeight,
-                                Zoom
+                                Zoom,
+                                depth
                             );
                         }
                     }
@@ -2355,7 +2357,8 @@ public class WorldMapGump : ResizableGump
                     gY,
                     halfWidth,
                     halfHeight,
-                    Zoom
+                    Zoom,
+                    depth
                 );
             if (World.WMapManager._corpse.Map == World.Map.Index)
             {
@@ -2373,7 +2376,8 @@ public class WorldMapGump : ResizableGump
                    new Vector2(pdrot.X - 2, pdrot.Y - 2),
                    new Vector2(prot.X, prot.Y),
                    ShaderHueTranslator.GetHueVector(0),
-                   1
+                   1,
+                   depth
                 );
             }
 
@@ -2393,7 +2397,8 @@ public class WorldMapGump : ResizableGump
                 new Vector2(end.X - 2, end.Y - 2),
                 new Vector2(start.X, start.Y),
                 ShaderHueTranslator.GetHueVector(0),
-                1
+                1,
+                depth
                 );
         }
 
@@ -2407,6 +2412,7 @@ public class WorldMapGump : ResizableGump
             halfHeight,
             Zoom,
             Color.White,
+            depth,
             _showPlayerName,
             false,
             _showPlayerBar
@@ -2416,7 +2422,7 @@ public class WorldMapGump : ResizableGump
 
         if (ShouldDrawGrid())
         {
-            DrawGrid(batcher, srcRect, gX, gY, halfWidth, halfHeight, Zoom);
+            DrawGrid(batcher, srcRect, gX, gY, halfWidth, halfHeight, Zoom, depth);
         }
 
         if (_showCoordinates)
@@ -2428,9 +2434,9 @@ public class WorldMapGump : ResizableGump
 
             Vector3 hueVector = new(0f, 1f, 1f);
 
-            batcher.DrawString(Fonts.Bold, text, gX + 6, gY + 6, hueVector);
+            batcher.DrawString(Fonts.Bold, text, gX + 6, gY + 6, hueVector, depth);
             hueVector = ShaderHueTranslator.GetHueVector(0);
-            batcher.DrawString(Fonts.Bold, text, gX + 5, gY + 5, hueVector);
+            batcher.DrawString(Fonts.Bold, text, gX + 5, gY + 5, hueVector, depth);
         }
 
         if (_showMouseCoordinates && _lastMousePosition != null)
@@ -2454,7 +2460,8 @@ public class WorldMapGump : ResizableGump
                 mouseCoordinateString,
                 mx + 1,
                 my + 1,
-                hueVector
+                hueVector,
+                depth
             );
 
             hueVector = ShaderHueTranslator.GetHueVector(0);
@@ -2465,7 +2472,8 @@ public class WorldMapGump : ResizableGump
                 mouseCoordinateString,
                 mx,
                 my,
-                hueVector
+                hueVector,
+                depth
             );
         }
     }
@@ -2480,9 +2488,10 @@ public class WorldMapGump : ResizableGump
         int height,
         float zoom,
         Color color,
+        float depth,
         bool drawName = false,
         bool isparty = false,
-        bool drawHpBar = false
+        bool drawHpBar = true
     )
     {
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
@@ -2545,7 +2554,8 @@ public class WorldMapGump : ResizableGump
                 DOT_SIZE,
                 DOT_SIZE
             ),
-            hueVector
+            hueVector,
+            depth
         );
 
         if (drawName && !string.IsNullOrEmpty(mobile.Name))
@@ -2582,7 +2592,8 @@ public class WorldMapGump : ResizableGump
                 mobile.Name,
                 xx + 1,
                 yy + 1,
-                hueVector
+                hueVector,
+                depth
             );
 
             hueVector.X = isparty ? 0x0034 : Notoriety.GetHue(mobile.NotorietyFlag);
@@ -2595,7 +2606,8 @@ public class WorldMapGump : ResizableGump
                 mobile.Name,
                 xx,
                 yy,
-                hueVector
+                hueVector,
+                depth
             );
         }
 
@@ -2619,7 +2631,7 @@ public class WorldMapGump : ResizableGump
 
             rot.Y += DOT_SIZE + 1;
 
-            DrawHpBar(batcher, rot.X, rot.Y, ww);
+            DrawHpBar(batcher, rot.X, rot.Y, ww, depth);
         }
     }
 
@@ -2631,7 +2643,8 @@ public class WorldMapGump : ResizableGump
         int y,
         int width,
         int height,
-        float zoom
+        float zoom,
+        float depth
     )
     {
         if (marker.MapId != _map.Index)
@@ -2684,7 +2697,8 @@ public class WorldMapGump : ResizableGump
                     DOT_SIZE,
                     DOT_SIZE
                 ),
-                hueVector
+                hueVector,
+                depth
             );
 
             if (Mouse.Position.X >= rot.X - DOT_SIZE && Mouse.Position.X <= rot.X + DOT_SIZE_HALF &&
@@ -2695,7 +2709,7 @@ public class WorldMapGump : ResizableGump
         }
         else
         {
-            batcher.Draw(marker.MarkerIcon, new Vector2(rot.X - (marker.MarkerIcon.Width >> 1), rot.Y - (marker.MarkerIcon.Height >> 1)), hueVector);
+            batcher.Draw(marker.MarkerIcon, new Vector2(rot.X - (marker.MarkerIcon.Width >> 1), rot.Y - (marker.MarkerIcon.Height >> 1)), hueVector, depth);
 
             if (!showMarkerName)
             {
@@ -2711,7 +2725,7 @@ public class WorldMapGump : ResizableGump
 
         if (showMarkerName)
         {
-            DrawMarkerString(batcher, marker, x, y, width, height);
+            DrawMarkerString(batcher, marker, x, y, width, height, depth);
 
             drawSingleName = false;
         }
@@ -2719,7 +2733,7 @@ public class WorldMapGump : ResizableGump
         return drawSingleName;
     }
 
-    private void DrawMarkerString(UltimaBatcher2D batcher, WMapMarker marker, int x, int y, int width, int height)
+    private void DrawMarkerString(UltimaBatcher2D batcher, WMapMarker marker, int x, int y, int width, int height, float depth)
     {
         int sx = marker.X - _center.X;
         int sy = marker.Y - _center.Y;
@@ -2771,7 +2785,8 @@ public class WorldMapGump : ResizableGump
                 (int)(size.X + 4),
                 (int)(size.Y + 4)
             ),
-            hueVector
+            hueVector,
+            depth
         );
 
         hueVector = new Vector3(0f, 1f, 1f);
@@ -2782,7 +2797,8 @@ public class WorldMapGump : ResizableGump
             marker.Name,
             xx + 1,
             yy + 1,
-            hueVector
+            hueVector,
+            depth
         );
 
         hueVector = ShaderHueTranslator.GetHueVector(0);
@@ -2793,7 +2809,8 @@ public class WorldMapGump : ResizableGump
             marker.Name,
             xx,
             yy,
-            hueVector
+            hueVector,
+            depth
         );
     }
 
@@ -2807,7 +2824,8 @@ public class WorldMapGump : ResizableGump
         int y,
         int width,
         int height,
-        float zoom
+        float zoom,
+        float depth
     )
     {
         int sx = multiX - _center.X;
@@ -2854,7 +2872,7 @@ public class WorldMapGump : ResizableGump
             _flipMap ? Microsoft.Xna.Framework.MathHelper.ToRadians(45) : 0,
             new Vector2(0.5f, 0.5f),
             SpriteEffects.None,
-            0
+            depth
         );
     }
 
@@ -2889,7 +2907,8 @@ public class WorldMapGump : ResizableGump
         int y,
         int width,
         int height,
-        float zoom
+        float zoom,
+        float depth
     )
     {
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
@@ -2924,7 +2943,7 @@ public class WorldMapGump : ResizableGump
             //}
             ////Handle drawing a label here
 
-            batcher.DrawLine(texture, start, end, hueVector, 1);
+            batcher.DrawLine(texture, start, end, hueVector, 1, depth);
         }
     }
 
@@ -2936,7 +2955,8 @@ public class WorldMapGump : ResizableGump
         int y,
         int width,
         int height,
-        float zoom
+        float zoom,
+        float depth
     )
     {
         const int GRID_SKIP = 8;
@@ -2950,7 +2970,7 @@ public class WorldMapGump : ResizableGump
             Vector2 start = WorldPointToGumpPoint(srcRect.X, worldY, x, y, width, height, zoom);
             Vector2 end = WorldPointToGumpPoint(srcRect.X + srcRect.Width, worldY, x, y, width, height, zoom);
 
-            batcher.DrawLine(colorTexture, start, end, hueVector, 1);
+            batcher.DrawLine(colorTexture, start, end, hueVector, 1, depth);
         }
 
         for (int worldX = (srcRect.X / GRID_SKIP) * GRID_SKIP; worldX < srcRect.X + srcRect.Width; worldX += GRID_SKIP)
@@ -2958,7 +2978,7 @@ public class WorldMapGump : ResizableGump
             Vector2 start = WorldPointToGumpPoint(worldX, srcRect.Y, x, y, width, height, zoom);
             Vector2 end = WorldPointToGumpPoint(worldX, srcRect.Y + srcRect.Height, x, y, width, height, zoom);
 
-            batcher.DrawLine(colorTexture, start, end, hueVector, 1);
+            batcher.DrawLine(colorTexture, start, end, hueVector, 1, depth);
         }
 
         batcher.SetBlendState(null);
@@ -2972,7 +2992,8 @@ public class WorldMapGump : ResizableGump
         int y,
         int width,
         int height,
-        float zoom
+        float zoom,
+        float depth
     )
     {
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
@@ -3055,7 +3076,8 @@ public class WorldMapGump : ResizableGump
                 DOT_SIZE,
                 DOT_SIZE
             ),
-            hueVector
+            hueVector,
+            depth
         );
 
         if (_showGroupName)
@@ -3093,7 +3115,8 @@ public class WorldMapGump : ResizableGump
                 name,
                 xx + 1,
                 yy + 1,
-                hueVector
+                hueVector,
+                depth
             );
 
             hueVector = new Vector3(uohue, 1f, 1f);
@@ -3104,18 +3127,19 @@ public class WorldMapGump : ResizableGump
                 name,
                 xx,
                 yy,
-                hueVector
+                hueVector,
+                depth
             );
         }
 
         if (_showGroupBar)
         {
             rot.Y += DOT_SIZE + 1;
-            DrawHpBar(batcher, rot.X, rot.Y, entity.HP);
+            DrawHpBar(batcher, rot.X, rot.Y, entity.HP, depth);
         }
     }
 
-    private void DrawHpBar(UltimaBatcher2D batcher, int x, int y, int hp)
+    private void DrawHpBar(UltimaBatcher2D batcher, int x, int y, int hp, float depth)
     {
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
@@ -3136,7 +3160,8 @@ public class WorldMapGump : ResizableGump
                 BAR_MAX_WIDTH + 2,
                 BAR_MAX_HEIGHT + 2
             ),
-            hueVector
+            hueVector,
+            depth
         );
 
         batcher.Draw
@@ -3149,7 +3174,8 @@ public class WorldMapGump : ResizableGump
                 BAR_MAX_WIDTH,
                 BAR_MAX_HEIGHT
             ),
-            hueVector
+            hueVector,
+            depth
         );
 
         int max = 100;
@@ -3180,7 +3206,8 @@ public class WorldMapGump : ResizableGump
                 max,
                 BAR_MAX_HEIGHT
             ),
-            hueVector
+            hueVector,
+            depth
         );
     }
 

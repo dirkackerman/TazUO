@@ -28,7 +28,7 @@ namespace ClassicUO.Game.Managers
 
         public virtual void Update() => ProcessWorldText(false);
 
-        public virtual void Draw(UltimaBatcher2D batcher, int startX, int startY, bool isGump = false)
+        public virtual void Draw(UltimaBatcher2D batcher, int startX, int startY, float layerDepth, bool isGump = false)
         {
             ProcessWorldText(false);
 
@@ -37,37 +37,24 @@ namespace ClassicUO.Game.Managers
 
             for (TextObject o = DrawPointer; o != null; o = o.DLeft)
             {
-                if (o.IsDestroyed || o.TextBox == null || o.TextBox.IsDisposed || o.Time < ClassicUO.Time.Ticks)
-                {
-                    continue;
-                }
+                if (o.IsDestroyed || o.TextBox == null || o.TextBox.IsDisposed || o.Time < ClassicUO.Time.Ticks) continue;
 
                 //ushort hue = 0;
 
                 float alpha = o.Alpha / 255f;
 
                 if (o.IsTransparent)
-                {
                     if (o.Alpha == 0xFF)
-                    {
                         alpha = 0x7F / 255f;
-                    }
-                }
 
                 int x = o.RealScreenPosition.X;
                 int y = o.RealScreenPosition.Y;
 
-                if (o.TextBox.PixelCheck(mouseX - x - startX, mouseY - y - startY))
-                {
-                    SelectedObject.Object = o;
-                }
+                if (o.TextBox.PixelCheck(mouseX - x, mouseY - y)) SelectedObject.Object = o;
                 bool highlight = false;
                 if (!isGump)
                 {
-                    if (o.Owner is Entity && SelectedObject.Object == o)
-                    {
-                        highlight = true;
-                    }
+                    if (o.Owner is Entity && SelectedObject.Object == o) highlight = true;
                 }
                 else
                 {
@@ -75,30 +62,18 @@ namespace ClassicUO.Game.Managers
                     y += startY;
                 }
                 o.TextBox.Alpha = alpha;
-                if (highlight)
-                    o.TextBox.Draw
-                    (
-                        batcher,
-                        x,
-                        y,
-                        Color.Yellow
-                    );
-                else
-                    o.TextBox.Draw
-                    (
-                        batcher,
-                        x,
-                        y
-                    );
+                o.TextBox.Draw
+                (
+                    batcher,
+                    x,
+                    y,
+                    highlight ? Color.Yellow : o.TextBox.FontColor);
             }
         }
 
         public void MoveToTop(TextObject obj)
         {
-            if (obj == null)
-            {
-                return;
-            }
+            if (obj == null) return;
 
             obj.UnlinkD();
 
@@ -107,21 +82,14 @@ namespace ClassicUO.Game.Managers
             obj.DLeft = FirstNode;
             obj.DRight = next;
 
-            if (next != null)
-            {
-                next.DLeft = obj;
-            }
+            if (next != null) next.DLeft = obj;
         }
 
         public void ProcessWorldText(bool doit)
         {
             if (doit)
-            {
                 if (_bounds.Count != 0)
-                {
                     _bounds.Clear();
-                }
-            }
 
             for (DrawPointer = FirstNode; DrawPointer != null; DrawPointer = DrawPointer.DRight)
             {
@@ -130,19 +98,14 @@ namespace ClassicUO.Game.Managers
                     TextObject t = DrawPointer;
 
                     if (t.Time >= ClassicUO.Time.Ticks && t.TextBox != null && !t.TextBox.IsDisposed)
-                    {
                         if (t.Owner != null)
                         {
                             t.IsTransparent = Collides(t);
                             CalculateAlpha(t);
                         }
-                    }
                 }
 
-                if (DrawPointer.DRight == null)
-                {
-                    break;
-                }
+                if (DrawPointer.DRight == null) break;
             }
         }
 
@@ -157,20 +120,12 @@ namespace ClassicUO.Game.Managers
                     delta /= 10;
 
                     if (delta > 100)
-                    {
                         delta = 100;
-                    }
-                    else if (delta < 1)
-                    {
-                        delta = 0;
-                    }
+                    else if (delta < 1) delta = 0;
 
                     delta = 255 * delta / 100;
 
-                    if (!msg.IsTransparent || delta <= 0x7F)
-                    {
-                        msg.Alpha = (byte)delta;
-                    }
+                    if (!msg.IsTransparent || delta <= 0x7F) msg.Alpha = (byte)delta;
 
                     msg.IsTransparent = true;
                 }
@@ -190,14 +145,12 @@ namespace ClassicUO.Game.Managers
             };
 
             for (int i = 0; i < _bounds.Count; i++)
-            {
                 if (_bounds[i].Intersects(rect))
                 {
                     result = true;
 
                     break;
                 }
-            }
 
             _bounds.Add(rect);
 
@@ -206,10 +159,7 @@ namespace ClassicUO.Game.Managers
 
         public void AddMessage(TextObject obj)
         {
-            if (obj == null)
-            {
-                return;
-            }
+            if (obj == null) return;
 
             obj.UnlinkD();
 
@@ -242,10 +192,7 @@ namespace ClassicUO.Game.Managers
             {
                 TextObject first = FirstNode;
 
-                while (first?.DLeft != null)
-                {
-                    first = first.DLeft;
-                }
+                while (first?.DLeft != null) first = first.DLeft;
 
                 while (first != null)
                 {
@@ -262,10 +209,7 @@ namespace ClassicUO.Game.Managers
             {
                 TextObject first = DrawPointer;
 
-                while (first?.DLeft != null)
-                {
-                    first = first.DLeft;
-                }
+                while (first?.DLeft != null) first = first.DLeft;
 
                 while (first != null)
                 {

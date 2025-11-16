@@ -9,9 +9,11 @@ using ClassicUO.Configuration;
 using ClassicUO.Game.Data;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using ClassicUO.Resources;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -92,12 +94,8 @@ namespace ClassicUO.Game.UI.Gumps
             Add(_box = new DataBox(0, 0, 0, 0) { WantUpdateSize = true });
 
             if (World.Player != null)
-            {
                 foreach (KeyValuePair<BuffIconType, BuffIcon> k in World.Player.BuffIcons)
-                {
                     _box.Add(new BuffControlEntry(World.Player.BuffIcons[k.Key]));
-                }
-            }
 
             _background.Graphic = _graphic;
             _background.X = 0;
@@ -165,10 +163,7 @@ namespace ClassicUO.Game.UI.Gumps
             {
                 _graphic++;
 
-                if (_graphic > 0x7582)
-                {
-                    _graphic = 0x757F;
-                }
+                if (_graphic > 0x7582) _graphic = 0x757F;
 
                 switch (_graphic)
                 {
@@ -215,10 +210,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             public BuffControlEntry(BuffIcon icon) : base(0, 0, icon.Graphic, 0)
             {
-                if (IsDisposed)
-                {
-                    return;
-                }
+                if (IsDisposed) return;
 
                 Icon = icon;
                 _alpha = 0xFF;
@@ -268,24 +260,18 @@ namespace ClassicUO.Game.UI.Gumps
                         _updateTooltipTime = (float)Time.Ticks + 1000;
 
                         if (span.Hours > 0)
-                        {
                             _gText.Text = string.Format(ResGumps.Span0Hours, span.Hours);
-                        }
                         else
-                        {
                             _gText.Text =
                                 span.Minutes > 0
                                     ? $"{span.Minutes}:{span.Seconds:00}"
                                     : $"{span.Seconds:00}s";
-                        }
                     }
 
                     if (Icon.Timer != 0xFFFF_FFFF && delta < 10000)
                     {
                         if (delta <= 0)
-                        {
                             ((BuffGump)Parent.Parent)?.RequestUpdateContents();
-                        }
                         else
                         {
                             int alpha = _alpha;
@@ -318,23 +304,38 @@ namespace ClassicUO.Game.UI.Gumps
                 }
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
+                float layerDepth = layerDepthRef;
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, _alpha / 255f, true);
 
                 ref readonly SpriteInfo gumpInfo = ref Client.Game.UO.Gumps.GetGump(Graphic);
-
-                if (gumpInfo.Texture != null)
+                Texture2D texture = gumpInfo.Texture;
+                if (texture != null)
                 {
-                    batcher.Draw(gumpInfo.Texture, new Vector2(x, y), gumpInfo.UV, hueVector);
+
+                    Rectangle sourceRectangle = gumpInfo.UV;
+                    renderLists.AddGumpWithAtlas
+                    (
+                        (batcher) =>
+                        {
+                            batcher.Draw(texture, new Vector2(x, y), sourceRectangle, hueVector, layerDepth);
+                            return true;
+                        }
+                    );
 
                     if (
                         ProfileManager.CurrentProfile != null
                         && ProfileManager.CurrentProfile.BuffBarTime
                     )
-                    {
-                        _gText.Draw(batcher, x - 3, y + gumpInfo.UV.Height / 2 - 3, hueVector.Z);
-                    }
+                        renderLists.AddGumpNoAtlas
+                        (
+                            (batcher) =>
+                            {
+                                _gText.Draw(batcher, x - 3, y + sourceRectangle.Height / 2 - 3, hueVector.Z);
+                                return true;
+                            }
+                        );
                 }
 
                 return true;

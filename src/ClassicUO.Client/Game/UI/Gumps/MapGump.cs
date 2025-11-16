@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -96,9 +97,7 @@ namespace ClassicUO.Game.UI.Gumps
                     if (map != null)
                     {
                         if (mapFacet != -1)
-                        {
                             map.AddUserMarker("TMap", mapX, mapY, mapFacet);
-                        }
                         else
                             map.AddUserMarker("TMap", mapX, mapY, World.Map.Index);
                     }
@@ -189,10 +188,7 @@ namespace ClassicUO.Game.UI.Gumps
 
         public void ClearContainer()
         {
-            foreach (Control s in _container)
-            {
-                s.Dispose();
-            }
+            foreach (Control s in _container) s.Dispose();
 
             _container.Clear();
         }
@@ -245,33 +241,21 @@ namespace ClassicUO.Game.UI.Gumps
             base.Update();
 
             if (_currentPin != null)
-            {
                 if (Mouse.LDragOffset != Point.Zero && Mouse.LDragOffset != _lastPoint)
                 {
                     _currentPin.Location += Mouse.LDragOffset - _lastPoint;
 
                     if (_currentPin.X < _hit.X)
-                    {
                         _currentPin.X = _hit.X;
-                    }
-                    else if (_currentPin.X >= _hit.Width)
-                    {
-                        _currentPin.X = _hit.Width;
-                    }
+                    else if (_currentPin.X >= _hit.Width) _currentPin.X = _hit.Width;
 
                     if (_currentPin.Y < _hit.Y)
-                    {
                         _currentPin.Y = _hit.Y;
-                    }
-                    else if (_currentPin.Y >= _hit.Height)
-                    {
-                        _currentPin.Y = _hit.Height;
-                    }
+                    else if (_currentPin.Y >= _hit.Height) _currentPin.Y = _hit.Height;
 
 
                     _lastPoint = Mouse.LDragOffset;
                 }
-            }
         }
 
 
@@ -280,67 +264,71 @@ namespace ClassicUO.Game.UI.Gumps
             Point offset = Mouse.LDragOffset;
 
             if (Math.Abs(offset.X) < 5 && Math.Abs(offset.Y) < 5)
-            {
                 if (PlotState != 0 && _currentPin == null && _pinTimer > Time.Ticks)
                 {
                     ushort x = (ushort)(e.X + 5);
                     ushort y = (ushort)e.Y;
 
                     AsyncNetClient.Socket.Send_MapMessage(LocalSerial,
-                                                     1,
-                                                     0,
-                                                     x,
-                                                     y);
+                        1,
+                        0,
+                        x,
+                        y);
 
                     AddPin(x, y);
                 }
-            }
 
             _currentPin = null;
             _lastPoint = Point.Zero;
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+            float layerDepth = layerDepthRef;
 
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-            batcher.Draw
+            renderLists.AddGumpNoAtlas
             (
-                _mapTexture,
-                new Rectangle(x + _hit.X, y + _hit.Y, _hit.Width, _hit.Height),
-                hueVector
-            );
-
-            Texture2D texture = SolidColorTextureCache.GetTexture(Color.White);
-
-            for (int i = 0; i < _container.Count; i++)
-            {
-                // HACK: redraw because pins are drawn when calling base.Draw(batcher, x, y);
-                _container[i].Draw(batcher, x + _container[i].X, y + _container[i].Y);
-
-                if (i + 1 >= _container.Count)
+                batcher =>
                 {
-                    break;
+                    batcher.Draw
+                    (
+                        _mapTexture,
+                        new Rectangle(x + _hit.X, y + _hit.Y, _hit.Width, _hit.Height),
+                        hueVector,
+                        layerDepth
+                    );
+
+                    Texture2D texture = SolidColorTextureCache.GetTexture(Color.White);
+                    RenderLists childRenderLists = new();
+                    for (int i = 0; i < _container.Count; i++)
+                    {
+                        // HACK: redraw because pins are drawn when calling base.Draw(batcher, x, y);
+                        _container[i].AddToRenderLists(childRenderLists, x + _container[i].X, y + _container[i].Y, ref layerDepth);
+
+                        if (i + 1 >= _container.Count) break;
+
+                        Control c0 = _container[i];
+                        Control c1 = _container[i + 1];
+
+                        batcher.DrawLine
+                        (
+                            texture,
+                            new Vector2(c0.ScreenCoordinateX, c0.ScreenCoordinateY),
+                            new Vector2(c1.ScreenCoordinateX, c1.ScreenCoordinateY),
+                            hueVector,
+                            1,
+                            layerDepth
+                        );
+                    }
+                    childRenderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+                    return true;
                 }
-
-                Control c0 = _container[i];
-                Control c1 = _container[i + 1];
-
-                batcher.DrawLine
-                (
-                    texture,
-                    new Vector2(c0.ScreenCoordinateX, c0.ScreenCoordinateY),
-                    new Vector2(c1.ScreenCoordinateX, c1.ScreenCoordinateY),
-                    hueVector,
-                    1
-                );
-            }
-
+            );
             return true;
         }
-
 
         protected override void OnMouseUp(int x, int y, MouseButtonType button)
         {
@@ -353,10 +341,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
             _pinTimer = Time.Ticks + 300;
 
-            if (PlotState != 0 && UIManager.MouseOverControl is PinControl pin)
-            {
-                _currentPin = pin;
-            }
+            if (PlotState != 0 && UIManager.MouseOverControl is PinControl pin) _currentPin = pin;
         }
 
 
@@ -367,10 +352,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             float testOfsX = tempX;
 
-            if (testOfsX == 0.0f)
-            {
-                testOfsX = 1.0f;
-            }
+            if (testOfsX == 0.0f) testOfsX = 1.0f;
 
             float pi = (float)Math.PI;
 
@@ -379,13 +361,8 @@ namespace ClassicUO.Game.UI.Gumps
             bool inverseCheck = false;
 
             if (x1 >= x2 && y1 <= y2)
-            {
                 inverseCheck = true;
-            }
-            else if (x1 >= x2 && y1 >= y2)
-            {
-                inverseCheck = true;
-            }
+            else if (x1 >= x2 && y1 >= y2) inverseCheck = true;
 
             float sinA = (float)Math.Sin(a * pi / 180f);
             float cosA = (float)Math.Sin(a * pi / 180f);
@@ -450,10 +427,7 @@ namespace ClassicUO.Game.UI.Gumps
         public override void AfterDispose()
         {
             base.AfterDispose();
-            if (_hit != null)
-            {
-                _hit.MouseUp -= TextureControlOnMouseUp;
-            }
+            if (_hit != null) _hit.MouseUp -= TextureControlOnMouseUp;
         }
 
         private enum ButtonType
@@ -506,21 +480,23 @@ namespace ClassicUO.Game.UI.Gumps
                 set => _text.Text = value;
             }
 
-
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
                 if (MouseIsOver)
-                {
                     _pic.Hue = 0x35;
-                }
-                else if (_pic.Hue != 0)
-                {
-                    _pic.Hue = 0;
-                }
+                else if (_pic.Hue != 0) _pic.Hue = 0;
 
-                base.Draw(batcher, x, y);
-                _text.Draw(batcher, x - _text.Width - 1, y);
+                base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+                float layerDepth = layerDepthRef;
 
+                renderLists.AddGumpNoAtlas
+                (
+                    batcher =>
+                    {
+                        _text.Draw(batcher, x - _text.Width - 1, y, layerDepth);
+                        return true;
+                    }
+                );
                 return true;
             }
 

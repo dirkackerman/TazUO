@@ -18,7 +18,7 @@ namespace ClassicUO.Game.UI.Gumps
         private const string DEBUG_STRING_0 = "- FPS: {0} (Min={1}, Max={2}), Zoom: {3:0.00}, Total Objs: {4}\n";
         private const string DEBUG_STRING_1 = "- Mobiles: {0}   Items: {1}   Statics: {2}   Multi: {3}   Lands: {4}   Effects: {5}\n";
         private const string DEBUG_STRING_2 = "- CharPos: {0}\n- Mouse: {1}\n- InGamePos: {2}\n";
-        private const string DEBUG_STRING_3 = "- Selected: {0}";
+        private const string DEBUG_STRING_3 = "- Selected: {0}\n";
 
         private const string DEBUG_STRING_SMALL = "FPS: {0}\nZoom: {1:0.00}";
         private const string DEBUG_STRING_SMALL_NO_ZOOM = "FPS: {0}";
@@ -74,10 +74,7 @@ namespace ClassicUO.Game.UI.Gumps
         {
             base.Update();
 
-            if (IsDisposed)
-            {
-                return;
-            }
+            if (IsDisposed) return;
 
             if (Time.Ticks > _timeToUpdate)
             {
@@ -110,11 +107,8 @@ namespace ClassicUO.Game.UI.Gumps
                     if (Profiler.Enabled)
                     {
                         double timeTotal = Profiler.TrackedTime;
-                        
-                        foreach (Profiler.ProfileData pd in Profiler.AllFrameData)
-                        {
-                            sb.Append($"\n[{pd.Context[pd.Context.Length - 1]}] [Last: {pd.LastTime:0.0}ms] [Total %: {100d * (pd.TimeInContext / timeTotal):0.00}]");
-                        }
+
+                        foreach (Profiler.ProfileData pd in Profiler.AllFrameData) sb.Append($"\n[{pd.Context[pd.Context.Length - 1]}] [Last: {pd.LastTime:0.0}ms] [Total %: {100d * (pd.TimeInContext / timeTotal):0.00}]");
                     }
                 }
                 else
@@ -123,13 +117,9 @@ namespace ClassicUO.Game.UI.Gumps
                     int cameraZoomIndex = cameraZoomCount - (int)((scene.Camera.ZoomMax - scene.Camera.Zoom) / scene.Camera.ZoomStep);
 
                     if (scene != null && cameraZoomIndex != 5)
-                    {
                         sb.Append(string.Format(DEBUG_STRING_SMALL, CUOEnviroment.CurrentRefreshRate, !World.InGame ? 1f : scene.Camera.Zoom));
-                    }
                     else
-                    {
                         sb.Append(string.Format(DEBUG_STRING_SMALL_NO_ZOOM, CUOEnviroment.CurrentRefreshRate));
-                    }
                 }
 
 
@@ -146,23 +136,26 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
         {
-            if (!base.Draw(batcher, x, y))
-            {
-                return false;
-            }
+            if (!base.AddToRenderLists(renderLists, x, y, ref layerDepthRef)) return false;
+            float layerDepth = layerDepthRef;
 
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-            batcher.DrawString
-            (
-                Fonts.Bold,
-                _cacheText,
-                x + 10,
-                y + 10,
-                hueVector
-            );
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.DrawString
+                (
+                    Fonts.Bold,
+                    _cacheText,
+                    x + 10,
+                    y + 10,
+                    hueVector,
+                    layerDepth
+                );
+                return true;
+            });
 
             return true;
         }
@@ -170,7 +163,6 @@ namespace ClassicUO.Game.UI.Gumps
         private string ReadObject(BaseGameObject obj)
         {
             if (obj != null && IsMinimized)
-            {
                 switch (obj)
                 {
                     case Mobile mob: return $"Mobile (0x{mob.Serial:X8})  graphic: 0x{mob.Graphic:X4}  flags: {mob.Flags}  noto: {mob.NotorietyFlag}";
@@ -187,7 +179,6 @@ namespace ClassicUO.Game.UI.Gumps
 
                     case Land land: return $"Land (0x{land.Graphic:X4})  flags: {land.TileData.Flags} stretched: {land.IsStretched}  avgZ: {land.AverageZ} minZ: {land.MinZ}";
                 }
-            }
 
             return string.Empty;
         }

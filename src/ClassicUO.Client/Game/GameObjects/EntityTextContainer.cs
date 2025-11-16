@@ -82,8 +82,11 @@ namespace ClassicUO.Game.GameObjects
 
             ushort hue = ProfileManager.CurrentProfile == null ? (ushort)0x0021 : ProfileManager.CurrentProfile.DamageHueOther;
             string name = string.Empty;
+            uint serial = 0;
+
             if (ReferenceEquals(Parent, _world.Player))
                 hue = ProfileManager.CurrentProfile == null ? (ushort)0x0034 : ProfileManager.CurrentProfile.DamageHueSelf;
+
             else if (Parent is Mobile)
             {
                 var _parent = (Mobile)Parent;
@@ -95,13 +98,15 @@ namespace ClassicUO.Game.GameObjects
 
                 if (_parent.Serial == _world.TargetManager.LastAttack)
                     hue = ProfileManager.CurrentProfile == null ? (ushort)0x1F : ProfileManager.CurrentProfile.DamageHueLastAttck;
+
+                serial = _parent.Serial;
             }
             string dps = ProfileManager.CurrentProfile.ShowDPS ? $" (DPS: {Parent.GetCurrentDPS()})" : string.Empty;
 
-            
+
             text_obj.TextBox = TextBox.GetOne(damage.ToString() + dps, ProfileManager.CurrentProfile.OverheadChatFont, ProfileManager.CurrentProfile.OverheadChatFontSize, hue, TextBox.RTLOptions.DefaultCenterStroked(ProfileManager.CurrentProfile.OverheadChatWidth).MouseInput(!ProfileManager.CurrentProfile.DisableMouseInteractionOverheadText));
 
-            _world.Journal.Add(damage.ToString() + dps, hue, name, TextType.CLIENT, messageType: MessageType.Damage);
+            _world.Journal.Add(damage.ToString() + dps, hue, name, serial == 0 ? null : serial, TextType.CLIENT, messageType: MessageType.Damage);
 
             text_obj.Time = Time.Ticks + 1500;
 
@@ -152,7 +157,7 @@ namespace ClassicUO.Game.GameObjects
             }
         }
 
-        public void Draw(UltimaBatcher2D batcher)
+        public void Draw(UltimaBatcher2D batcher, float layerDepth)
         {
             if (IsDestroyed || _messages.Count == 0)
             {
@@ -227,7 +232,7 @@ namespace ClassicUO.Game.GameObjects
                 }
             }
 
-            p = Client.Game.Scene.Camera.WorldToScreen(p);
+            p = Client.Game.Scene.Camera.WorldToScreen(p, true);
 
             foreach (TextObject item in _messages)
             {
@@ -238,7 +243,7 @@ namespace ClassicUO.Game.GameObjects
 
                 item.X = p.X - (item.TextBox.Width >> 1);
                 item.Y = p.Y - offY - item.TextBox.Height - item.OffsetY;
-                item.TextBox.Draw(batcher, item.X, item.Y);
+                item.TextBox.Draw(batcher, item.X, item.Y, item.TextBox.FontColor);
                 offY += item.TextBox.Height;
             }
         }

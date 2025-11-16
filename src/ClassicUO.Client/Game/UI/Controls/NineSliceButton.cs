@@ -1,6 +1,4 @@
 using ClassicUO.Input;
-using ClassicUO.Renderer;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace ClassicUO.Game.UI.Controls;

@@ -15,6 +15,7 @@ using ClassicUO.Resources;
 using Microsoft.Xna.Framework;
 using SDL3;
 using System.Diagnostics;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -184,18 +185,11 @@ namespace ClassicUO.Game.UI.Gumps
                     _gumpPic.Graphic = value ? (ushort) 0x839 : (ushort) 0x82D;
 
                     if (value)
-                    {
                         _gumpPic.X = 0;
-                    }
                     else
-                    {
                         _gumpPic.X = 160;
-                    }
 
-                    foreach (Control c in Children)
-                    {
-                        c.IsVisible = !value;
-                    }
+                    foreach (Control c in Children) c.IsVisible = !value;
 
                     _gumpPic.IsVisible = true;
                     WantUpdateSize = true;
@@ -210,18 +204,12 @@ namespace ClassicUO.Game.UI.Gumps
 
         private void _picBase_MouseDoubleClick(object sender, MouseDoubleClickEventArgs e)
         {
-            if (e.Button == MouseButtonType.Left && IsMinimized)
-            {
-                IsMinimized = false;
-            }
+            if (e.Button == MouseButtonType.Left && IsMinimized) IsMinimized = false;
         }
 
         private void _hitBox_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtonType.Left && !IsMinimized)
-            {
-                IsMinimized = true;
-            }
+            if (e.Button == MouseButtonType.Left && !IsMinimized) IsMinimized = true;
         }
 
         public override void OnButtonClick(int buttonID)
@@ -243,32 +231,29 @@ namespace ClassicUO.Game.UI.Gumps
                 _container.ReArrangeChildren();
             }
             else if (buttonID == 1) // reset
-            {
                 UIManager.Add(
                     new MessageBoxGump(World, 300, 200,
-                                       "Skills will be placed in default groups.\nDo you want reset all groups?",
-                                               b =>
-                                               {
-                                                   if (b)
-                                                   {
-                                                       _skillsControl.Clear();
-                                                       _container.Clear();
+                        "Skills will be placed in default groups.\nDo you want reset all groups?",
+                        b =>
+                        {
+                            if (b)
+                            {
+                                _skillsControl.Clear();
+                                _container.Clear();
 
-                                                       World.SkillsGroupManager.Groups.Clear();
-                                                       World.SkillsGroupManager.MakeDefault();
+                                World.SkillsGroupManager.Groups.Clear();
+                                World.SkillsGroupManager.MakeDefault();
 
-                                                       LoadSkills();
+                                LoadSkills();
 
-                                                       _container.ReArrangeChildren();
-                                                   }
-                                               }, false, MessageButtonType.OK_CANCEL));
-            }
+                                _container.ReArrangeChildren();
+                            }
+                        }, false, MessageButtonType.OK_CANCEL));
         }
 
         private void LoadSkills()
         {
             if (World.Player != null)
-            {
                 foreach (SkillsGroup g in World.SkillsGroupManager.Groups)
                 {
                     var control = new SkillsGroupControl(this, g, 3, 3);
@@ -283,13 +268,9 @@ namespace ClassicUO.Game.UI.Gumps
                     {
                         byte index = g.GetSkill(i);
 
-                        if (index < Client.Game.UO.FileManager.Skills.SkillsCount)
-                        {
-                            control.AddSkill(index, 0, 17 + i * 17);
-                        }
+                        if (index < Client.Game.UO.FileManager.Skills.SkillsCount) control.AddSkill(index, 0, 17 + i * 17);
                     }
                 }
-            }
         }
 
         private void SkillGroupMinimizedChanged(object sender, EventArgs e)
@@ -334,12 +315,8 @@ namespace ClassicUO.Game.UI.Gumps
         public void Update(int skillIndex)
         {
             foreach (SkillsGroupControl c in _skillsControl)
-            {
                 if (c.UpdateSkillValue(skillIndex, _checkReal.IsChecked, _checkCaps.IsChecked))
-                {
                     break;
-                }
-            }
 
             SumTotalSkills();
         }
@@ -351,19 +328,12 @@ namespace ClassicUO.Game.UI.Gumps
             if (_checkReal.IsChecked && _checkCaps.IsChecked)
             {
                 if (checkbox == _checkReal)
-                {
                     _checkCaps.IsChecked = false;
-                }
                 else
-                {
                     _checkReal.IsChecked = false;
-                }
             }
 
-            foreach (SkillsGroupControl c in _skillsControl)
-            {
-                c.UpdateAllSkillsValues(_checkReal.IsChecked, _checkCaps.IsChecked);
-            }
+            foreach (SkillsGroupControl c in _skillsControl) c.UpdateAllSkillsValues(_checkReal.IsChecked, _checkCaps.IsChecked);
 
             SumTotalSkills();
         }
@@ -463,17 +433,11 @@ namespace ClassicUO.Game.UI.Gumps
 
                 _textbox.MouseDown += (s, e) =>
                 {
-                    if (_textbox.IsEditable && _status == 2)
-                    {
-                        return;
-                    }
+                    if (_textbox.IsEditable && _status == 2) return;
 
                     _status++;
 
-                    if (_status >= 3)
-                    {
-                        _status = 0;
-                    }
+                    if (_status >= 3) _status = 0;
 
                     switch (_status)
                     {
@@ -550,39 +514,28 @@ namespace ClassicUO.Game.UI.Gumps
                 _box.WantUpdateSize = true;
                 WantUpdateSize = true;
 
-                if (!_button.IsVisible)
-                {
-                    _button.IsVisible = true;
-                }
+                if (!_button.IsVisible) _button.IsVisible = true;
             }
 
             public void UpdateAllSkillsValues(bool showReal, bool showCaps)
             {
-                foreach (SkillItemControl skill in _skills)
-                {
-                    skill.UpdateValueText(showReal, showCaps);
-                }
+                foreach (SkillItemControl skill in _skills) skill.UpdateValueText(showReal, showCaps);
             }
 
             public bool UpdateSkillValue(int index, bool showReal, bool showCaps)
             {
                 foreach (SkillItemControl c in _skills)
-                {
                     if (c.Index == index && index >= 0 && index < _gump.World.Player.Skills.Length)
                     {
                         Skill skill = _gump.World.Player.Skills[index];
 
-                        if (skill == null)
-                        {
-                            return true;
-                        }
+                        if (skill == null) return true;
 
                         c.UpdateValueText(showReal, showCaps);
                         c.SetStatus(skill.Lock);
 
                         return true;
                     }
-                }
 
                 return false;
             }
@@ -590,15 +543,13 @@ namespace ClassicUO.Game.UI.Gumps
             protected override void OnMouseOver(int x, int y)
             {
                 if (UIManager.LastControlMouseDown(MouseButtonType.Left) is SkillItemControl skillControl)
-                {
                     if (skillControl.Parent // databox
-                                    .Parent // skillgruop
+                            .Parent // skillgruop
                         != this)
                     {
                         var originalGroup = (SkillsGroupControl) skillControl.Parent.Parent;
 
                         if (originalGroup != null)
-                        {
                             // remove from original control the skillcontrol
                             if (!_group.Contains((byte) skillControl.Index))
                             {
@@ -617,28 +568,21 @@ namespace ClassicUO.Game.UI.Gumps
                                 int itemCount = _group.Count;
 
                                 for (int i = 0; i < itemCount; i++)
-                                {
                                     if (_group.GetSkill(i) == index)
                                     {
                                         _skills.Insert(i, skillControl);
                                         _box.Insert(i, skillControl);
 
-                                        if (!_button.IsVisible)
-                                        {
-                                            _button.IsVisible = true;
-                                        }
+                                        if (!_button.IsVisible) _button.IsVisible = true;
 
                                         break;
                                     }
-                                }
 
                                 // update gump positions
                                 UpdateSkillsPosition();
                                 originalGroup.UpdateSkillsPosition();
                             }
-                        }
                     }
-                }
 
                 base.OnMouseOver(x, y);
             }
@@ -661,9 +605,7 @@ namespace ClassicUO.Game.UI.Gumps
                     _gumpPic.Width = 215 - xx;
                 }
                 else
-                {
                     _gumpPic.IsVisible = false;
-                }
 
                 UIManager.KeyboardFocusControl = null;
                 UIManager.SystemChat.SetFocus();
@@ -678,7 +620,6 @@ namespace ClassicUO.Game.UI.Gumps
                 base.OnKeyUp(key, mod);
 
                 if (key == SDL.SDL_Keycode.SDLK_DELETE && _status == 1)
-                {
                     if (_gump.World.SkillsGroupManager.Remove(_group) && RootParent is StandardSkillsGump gump)
                     {
                         SkillsGroupControl first = gump._skillsControl[0];
@@ -690,20 +631,15 @@ namespace ClassicUO.Game.UI.Gumps
                             int itemCount = first._group.Count;
 
                             for (int i = 0; i < itemCount; i++)
-                            {
                                 if (first._group.GetSkill(i) == skillControl.Index)
                                 {
                                     first._skills.Insert(i, skillControl);
                                     first._box.Insert(i, skillControl);
 
-                                    if (!first._button.IsVisible)
-                                    {
-                                        first._button.IsVisible = true;
-                                    }
+                                    if (!first._button.IsVisible) first._button.IsVisible = true;
 
                                     break;
                                 }
-                            }
                         }
 
                         _skills.Clear();
@@ -711,15 +647,11 @@ namespace ClassicUO.Game.UI.Gumps
 
                         first.UpdateSkillsPosition();
                     }
-                }
             }
 
             public override void OnButtonClick(int buttonID)
             {
-                if (buttonID == 1000)
-                {
-                    IsMinimized = !IsMinimized;
-                }
+                if (buttonID == 1000) IsMinimized = !IsMinimized;
             }
 
             private void UpdateSkillsPosition()
@@ -736,42 +668,55 @@ namespace ClassicUO.Game.UI.Gumps
                 WantUpdateSize = true;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
+                float layerDepth = layerDepthRef;
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
                 if (_status == 2)
-                {
-                    batcher.Draw
+                    renderLists.AddGumpNoAtlas
                     (
-                        SolidColorTextureCache.GetTexture(Color.Beige),
-                        new Rectangle
-                        (
-                            x,
-                            y,
-                            Width,
-                            17
-                        ),
-                        hueVector
+                        batcher =>
+                        {
+                            batcher.Draw
+                            (
+                                SolidColorTextureCache.GetTexture(Color.Beige),
+                                new Rectangle
+                                (
+                                    x,
+                                    y,
+                                    Width,
+                                    17
+                                ),
+                                hueVector,
+                                layerDepth
+                            );
+                            return true;
+                        }
                     );
-                }
                 else if (_status == 1)
-                {
-                    batcher.Draw
+                    renderLists.AddGumpNoAtlas
                     (
-                        SolidColorTextureCache.GetTexture(Color.Bisque),
-                        new Rectangle
-                        (
-                            x + 16,
-                            y,
-                            200,
-                            17
-                        ),
-                        hueVector
+                        batcher =>
+                        {
+                            batcher.Draw
+                            (
+                                SolidColorTextureCache.GetTexture(Color.Bisque),
+                                new Rectangle
+                                (
+                                    x + 16,
+                                    y,
+                                    200,
+                                    17
+                                ),
+                                hueVector,
+                                layerDepth
+                            );
+                            return true;
+                        }
                     );
-                }
 
-                return base.Draw(batcher, x, y);
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
             }
         }
 
@@ -854,27 +799,18 @@ namespace ClassicUO.Game.UI.Gumps
             public override void OnButtonClick(int buttonID)
             {
                 if (buttonID == 0) // use
-                {
                     GameActions.UseSkill(Index);
-                }
                 else if (buttonID == 1) // change status
                 {
-                    if (_gump.World.Player == null)
-                    {
-                        return;
-                    }
+                    if (_gump.World.Player == null) return;
 
                     Skill skill = _gump.World.Player.Skills[Index];
                     byte newStatus = (byte) skill.Lock;
 
                     if (newStatus < 2)
-                    {
                         newStatus++;
-                    }
                     else
-                    {
                         newStatus = 0;
-                    }
 
                     AsyncNetClient.Socket.Send_SkillStatusChangeRequest((ushort)Index, newStatus);
 
@@ -895,10 +831,7 @@ namespace ClassicUO.Game.UI.Gumps
 
             public void UpdateValueText(bool showReal, bool showCap)
             {
-                if (_gump.World.Player == null || Index < 0 || Index >= _gump.World.Player.Skills.Length)
-                {
-                    return;
-                }
+                if (_gump.World.Player == null || Index < 0 || Index >= _gump.World.Player.Skills.Length) return;
 
                 Skill skill = _gump.World.Player.Skills[Index];
 
@@ -907,13 +840,8 @@ namespace ClassicUO.Game.UI.Gumps
                     double val = skill.Value;
 
                     if (showReal)
-                    {
                         val = skill.Base;
-                    }
-                    else if (showCap)
-                    {
-                        val = skill.Cap;
-                    }
+                    else if (showCap) val = skill.Cap;
 
                     _value.Text = $"{val:F1}";
                     _value.X = 250 - _value.Width;
@@ -935,69 +863,64 @@ namespace ClassicUO.Game.UI.Gumps
 
             protected override void OnMouseUp(int x, int y, MouseButtonType button)
             {
-                if (button != MouseButtonType.Left)
-                {
-                    return;
-                }
+                if (button != MouseButtonType.Left) return;
 
                 Client.Game.UO.GameCursor.IsDraggingCursorForced = false;
 
                 if (UIManager.LastControlMouseDown(MouseButtonType.Left) == this && _gump.World.Player.Skills[Index].IsClickable)
-                {
                     if (UIManager.MouseOverControl == null || UIManager.MouseOverControl.RootParent != RootParent)
                     {
                         GetSpellFloatingButton(Index)?.Dispose();
 
-                        if (Index >= 0 && Index < _gump.World.Player.Skills.Length)
-                        {
-                            UIManager.Add(new SkillButtonGump(_gump.World, _gump.World.Player.Skills[Index], Mouse.Position.X - 44, Mouse.Position.Y - 22));
-                        }
+                        if (Index >= 0 && Index < _gump.World.Player.Skills.Length) UIManager.Add(new SkillButtonGump(_gump.World, _gump.World.Player.Skills[Index], Mouse.Position.X - 44, Mouse.Position.Y - 22));
                     }
-                }
             }
 
             private static SkillButtonGump GetSpellFloatingButton(int id)
             {
                 for (LinkedListNode<Gump> i = UIManager.Gumps.Last; i != null; i = i.Previous)
-                {
                     if (i.Value is SkillButtonGump g && g.SkillID == id)
-                    {
                         return g;
-                    }
-                }
 
                 return null;
             }
 
             protected override void OnMouseDown(int x, int y, MouseButtonType button)
             {
-                if (button == MouseButtonType.Left)
-                {
-                    Client.Game.UO.GameCursor.IsDraggingCursorForced = true;
-                }
+                if (button == MouseButtonType.Left) Client.Game.UO.GameCursor.IsDraggingCursorForced = true;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
+                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+
                 if (UIManager.LastControlMouseDown(MouseButtonType.Left) == this)
                 {
-                    Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
-
-                    batcher.Draw
+                    float layerDepth = layerDepthRef;
+                    renderLists.AddGumpNoAtlas
                     (
-                        SolidColorTextureCache.GetTexture(Color.Wheat),
-                        new Rectangle
-                        (
-                            x,
-                            y,
-                            Width,
-                            Height
-                        ),
-                        hueVector
+                        batcher =>
+                        {
+                            batcher.Draw
+                            (
+                                SolidColorTextureCache.GetTexture(Color.Wheat),
+                                new Rectangle
+                                (
+                                    x,
+                                    y,
+                                    Width,
+                                    Height
+                                ),
+                                hueVector,
+                                layerDepth
+                            );
+
+                            return true;
+                        }
                     );
                 }
 
-                return base.Draw(batcher, x, y);
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
             }
         }
     }

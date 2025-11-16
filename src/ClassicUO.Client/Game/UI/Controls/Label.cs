@@ -2,104 +2,109 @@
 
 using System.Collections.Generic;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using ClassicUO.Utility;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class Label : Control
 {
-    public class Label : Control
+    private readonly RenderedText _gText;
+
+    public Label
+    (
+        string text,
+        bool isunicode,
+        ushort hue,
+        int maxwidth = 0,
+        byte font = 0xFF,
+        FontStyle style = FontStyle.None,
+        TEXT_ALIGN_TYPE align = TEXT_ALIGN_TYPE.TS_LEFT,
+        bool ishtml = false
+    )
     {
-        private readonly RenderedText _gText;
-
-        public Label
+        _gText = RenderedText.Create
         (
-            string text,
-            bool isunicode,
-            ushort hue,
-            int maxwidth = 0,
-            byte font = 0xFF,
-            FontStyle style = FontStyle.None,
-            TEXT_ALIGN_TYPE align = TEXT_ALIGN_TYPE.TS_LEFT,
-            bool ishtml = false
-        )
-        {
-            _gText = RenderedText.Create
-            (
-                text,
-                hue,
-                font,
-                isunicode,
-                style,
-                align,
-                maxwidth,
-                isHTML: ishtml
-            );
+            text,
+            hue,
+            font,
+            isunicode,
+            style,
+            align,
+            maxwidth,
+            isHTML: ishtml
+        );
 
-            AcceptMouseInput = false;
+        AcceptMouseInput = false;
+        Width = _gText.Width;
+        Height = _gText.Height;
+    }
+
+    public Label(List<string> parts, string[] lines) : this
+    (
+        int.TryParse(parts[4], out int lineIndex) && lineIndex >= 0 && lineIndex < lines.Length ? lines[lineIndex] : string.Empty,
+        true,
+        (ushort) (UInt16Converter.Parse(parts[3]) + 1),
+        0,
+        style: FontStyle.BlackBorder
+    )
+    {
+        X = int.Parse(parts[1]);
+        Y = int.Parse(parts[2]);
+        IsFromServer = true;
+    }
+
+    public string Text
+    {
+        get => _gText.Text;
+        set
+        {
+            _gText.Text = value;
             Width = _gText.Width;
             Height = _gText.Height;
         }
+    }
 
-        public Label(List<string> parts, string[] lines) : this
-        (
-            int.TryParse(parts[4], out int lineIndex) && lineIndex >= 0 && lineIndex < lines.Length ? lines[lineIndex] : string.Empty,
-            true,
-            (ushort) (UInt16Converter.Parse(parts[3]) + 1),
-            0,
-            style: FontStyle.BlackBorder
-        )
-        {
-            X = int.Parse(parts[1]);
-            Y = int.Parse(parts[2]);
-            IsFromServer = true;
-        }
 
-        public string Text
+    public ushort Hue
+    {
+        get => _gText.Hue;
+        set
         {
-            get => _gText.Text;
-            set
+            if (_gText.Hue != value)
             {
-                _gText.Text = value;
-                Width = _gText.Width;
-                Height = _gText.Height;
+                _gText.Hue = value;
+                _gText.CreateTexture();
             }
         }
+    }
 
 
-        public ushort Hue
-        {
-            get => _gText.Hue;
-            set
+    public byte Font => _gText.Font;
+
+    public bool Unicode => _gText.IsUnicode;
+
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        if (IsDisposed) return false;
+
+        float layerDepth = layerDepthRef;
+        renderLists.AddGumpNoAtlas(
+            batcher =>
             {
-                if (_gText.Hue != value)
-                {
-                    _gText.Hue = value;
-                    _gText.CreateTexture();
-                }
+                _gText.Draw(batcher, x, y, layerDepth, Alpha);
+
+                return true;
             }
-        }
+        );
 
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
+    }
 
-        public byte Font => _gText.Font;
-
-        public bool Unicode => _gText.IsUnicode;
-
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            if (IsDisposed)
-            {
-                return false;
-            }
-
-            _gText.Draw(batcher, x, y, Alpha);
-
-            return base.Draw(batcher, x, y);
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            _gText.Destroy();
-        }
+    public override void Dispose()
+    {
+        base.Dispose();
+        _gText.Destroy();
     }
 }

@@ -1,34 +1,41 @@
 ﻿// SPDX-License-Identifier: BSD-2-Clause
 
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class Line : Control
 {
-    public class Line : Control
+    private readonly Texture2D _texture;
+    private Vector3 _hueVector;
+
+    public Line(int x, int y, int w, int h, uint color)
     {
-        private readonly Texture2D _texture;
-        private Vector3 _hueVector;
+        X = x;
+        Y = y;
+        Width = w;
+        Height = h;
 
-        public Line(int x, int y, int w, int h, uint color)
-        {
-            X = x;
-            Y = y;
-            Width = w;
-            Height = h;
+        _texture = SolidColorTextureCache.GetTexture(new Color { PackedValue = color });
+        _hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
+    }
 
-            _texture = SolidColorTextureCache.GetTexture(new Color { PackedValue = color });
-            _hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
-        }
+    public override void AlphaChanged(float oldValue, float newValue)
+    {
+        base.AlphaChanged(oldValue, newValue);
+        _hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
+    }
 
-        public override void AlphaChanged(float oldValue, float newValue)
-        {
-            base.AlphaChanged(oldValue, newValue);
-            _hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
-        }
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        if (IsDisposed) return false;
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        float layerDepth = layerDepthRef;
+
+        renderLists.AddGumpNoAtlas(batcher =>
         {
             batcher.Draw
             (
@@ -40,10 +47,13 @@ namespace ClassicUO.Game.UI.Controls
                     Width,
                     Height
                 ),
-                _hueVector
+                _hueVector,
+                layerDepth
             );
 
             return true;
-        }
+        });
+
+        return true;
     }
 }

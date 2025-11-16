@@ -111,7 +111,8 @@ namespace ClassicUO.Renderer.Arts
             int index,
             ushort customHue,
             out int hotX,
-            out int hotY
+            out int hotY,
+            float dpiScale
         )
         {
             hotX = hotY = 0;
@@ -125,23 +126,37 @@ namespace ClassicUO.Renderer.Arts
 
             fixed (uint* ptr = artInfo.Pixels)
             {
-                var surface = (SDL.SDL_Surface*)SDL.SDL_CreateSurfaceFrom(artInfo.Width, artInfo.Height, SDL.SDL_PixelFormat.SDL_PIXELFORMAT_ABGR8888, (IntPtr)ptr, 4 * artInfo.Width);
-                // SDL2:
-                // SDL.SDL_Surface* surface = (SDL.SDL_Surface*)
-                //     SDL.SDL_CreateRGBSurfaceWithFormatFrom(
-                //         (IntPtr)ptr,
-                //         artInfo.Width,
-                //         artInfo.Height,
-                //         32,
-                //         4 * artInfo.Width,
-                //         SDL.SDL_PIXELFORMAT_ABGR8888
-                //     );
+                var surface = (SDL.SDL_Surface*)
+                    SDL.SDL_CreateSurfaceFrom(
+                        artInfo.Width,
+                        artInfo.Height,
+                        SDL.SDL_PixelFormat.SDL_PIXELFORMAT_ABGR8888,
+                        (IntPtr)ptr,
+                        4 * artInfo.Width);
+
+                int width = artInfo.Width;
+                int height = artInfo.Height;
+
+                if (dpiScale != 1f)
+                {
+                    width = (int)(artInfo.Width * dpiScale);
+                    height = (int)(artInfo.Height * dpiScale);
+
+                    var newSurface = (SDL.SDL_Surface*)SDL.SDL_ScaleSurface(
+                        (nint)surface,
+                        width,
+                        height,
+                        SDL.SDL_ScaleMode.SDL_SCALEMODE_NEAREST);
+
+                    SDL.SDL_DestroySurface((nint)surface);
+                    surface = newSurface;
+                }
 
                 int stride = surface->pitch >> 2;
                 uint* pixels_ptr = (uint*)surface->pixels;
-                uint* p_line_end = pixels_ptr + artInfo.Width;
-                uint* p_img_end = pixels_ptr + stride * artInfo.Height;
-                int delta = stride - artInfo.Width;
+                uint* p_line_end = pixels_ptr + width;
+                uint* p_img_end = pixels_ptr + stride * height;
+                int delta = stride - width;
                 short curX = 0;
                 short curY = 0;
                 Color c = default;
@@ -154,7 +169,7 @@ namespace ClassicUO.Renderer.Arts
                     {
                         if (*pixels_ptr != 0 && *pixels_ptr != 0xFF_00_00_00)
                         {
-                            if (curX >= artInfo.Width - 1 || curY >= artInfo.Height - 1)
+                            if (curX >= width - 1 || curY >= height - 1)
                             {
                                 *pixels_ptr = 0;
                             }
@@ -179,14 +194,12 @@ namespace ClassicUO.Renderer.Arts
                             {
                                 c.PackedValue = *pixels_ptr;
                                 *pixels_ptr =
-                                    _huesLoader.ApplyHueRgba8888(HuesHelper.Color32To16(*pixels_ptr), customHue);
-
-                                     /*HuesHelper.Color16To32(
-                                         _huesLoader.GetColor16(
-                                             HuesHelper.ColorToHue(c),
-                                             customHue
-                                         )
-                                     ) | 0xFF_00_00_00;*/
+                                    HuesHelper.Color16To32(
+                                        _huesLoader.GetColor16(
+                                            HuesHelper.ColorToHue(c),
+                                            customHue
+                                        )
+                                    ) | 0xFF_00_00_00;
                             }
                         }
 

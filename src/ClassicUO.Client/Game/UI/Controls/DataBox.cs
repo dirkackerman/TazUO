@@ -3,103 +3,102 @@
 
 using System;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class DataBox : Control
 {
-    public class DataBox : Control
+    public DataBox(int x, int y, int w, int h)
     {
-        public DataBox(int x, int y, int w, int h)
+        CanMove = false;
+        AcceptMouseInput = true;
+        X = x;
+        Y = y;
+        Width = w;
+        Height = h;
+        WantUpdateSize = false;
+    }
+
+    public bool ContainsByBounds { get; set; }
+
+    public override T Add<T>(T c, int page = 0)
+    {
+        base.Add(c, page);
+        c.UpdateOffset(0, Offset.Y);
+        return c;
+    }
+
+    public void ReArrangeChildrenGridStyle(int vspacing = 0, int hspacing = 0)
+    {
+        // Grid layout: left to right, top to bottom
+        int currentX = 0;
+        int currentY = 0;
+        int rowHeight = 0;
+
+        for (int i = 0; i < Children.Count; ++i)
         {
-            CanMove = false;
-            AcceptMouseInput = true;
-            X = x;
-            Y = y;
-            Width = w;
-            Height = h;
-            WantUpdateSize = false;
-        }
+            Control c = Children[i];
 
-        public bool ContainsByBounds { get; set; }
+            if (!c.IsVisible || c.IsDisposed)
+                continue;
 
-        public override T Add<T>(T c, int page = 0)
-        {
-            base.Add(c, page);
-            c.UpdateOffset(0, Offset.Y);
-            return c;
-        }
-
-        public void ReArrangeChildrenGridStyle(int vspacing = 0, int hspacing = 0)
-        {
-            // Grid layout: left to right, top to bottom
-            int currentX = 0;
-            int currentY = 0;
-            int rowHeight = 0;
-
-            for (int i = 0; i < Children.Count; ++i)
+            // If adding this control would exceed the width, move to next row
+            if (currentX + c.Width > Width && currentX > 0)
             {
-                Control c = Children[i];
+                currentX = 0;
+                currentY += rowHeight + vspacing;
+                rowHeight = 0;
+            }
 
-                if (!c.IsVisible || c.IsDisposed)
-                    continue;
+            // Position the control
+            c.X = currentX;
+            c.Y = currentY;
 
-                // If adding this control would exceed the width, move to next row
-                if (currentX + c.Width > Width && currentX > 0)
-                {
-                    currentX = 0;
-                    currentY += rowHeight + vspacing;
-                    rowHeight = 0;
-                }
+            // Update position for next control
+            currentX += c.Width + hspacing;
 
-                // Position the control
-                c.X = currentX;
-                c.Y = currentY;
+            // Keep track of tallest control in this row to determine next row's Y position
+            rowHeight = Math.Max(rowHeight, c.Height);
+        }
+    }
 
-                // Update position for next control
-                currentX += c.Width + hspacing;
+    public void ReArrangeChildren(int vspacing = 0)
+    {
+        for (int i = 0, height = 0; i < Children.Count; ++i)
+        {
+            Control c = Children[i];
 
-                // Keep track of tallest control in this row to determine next row's Y position
-                rowHeight = Math.Max(rowHeight, c.Height);
+            if (c.IsVisible && !c.IsDisposed)
+            {
+                c.Y = height;
+
+                height += c.Height + vspacing;
             }
         }
 
-        public void ReArrangeChildren(int vspacing = 0)
+        WantUpdateSize = true;
+    }
+
+    public override bool Contains(int x, int y)
+    {
+        if (ContainsByBounds)
         {
-            for (int i = 0, height = 0; i < Children.Count; ++i)
-            {
-                Control c = Children[i];
-
-                if (c.IsVisible && !c.IsDisposed)
-                {
-                    c.Y = height;
-
-                    height += c.Height + vspacing;
-                }
-            }
-
-            WantUpdateSize = true;
+            return true;
         }
 
-        public override bool Contains(int x, int y)
+        Control t = null;
+        x += ScreenCoordinateX;
+        y += ScreenCoordinateY;
+
+        foreach (Control child in Children)
         {
-            if (ContainsByBounds)
+            child.HitTest(x, y, ref t);
+
+            if (t != null)
             {
                 return true;
             }
-
-            Control t = null;
-            x += ScreenCoordinateX;
-            y += ScreenCoordinateY;
-
-            foreach (Control child in Children)
-            {
-                child.HitTest(x, y, ref t);
-
-                if (t != null)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
+
+        return false;
     }
 }

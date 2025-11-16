@@ -1,5 +1,3 @@
-using ClassicUO.Game.UI;
-
 namespace ClassicUO.Game.UI.Controls;
 
 public class HBoxContainer : Control

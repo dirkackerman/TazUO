@@ -1,6 +1,4 @@
-using ClassicUO.LegionScripting;
 using ClassicUO.Utility.Logging;
-using Microsoft.Xna.Framework;
 
 namespace ClassicUO.Game.UI.Controls;
 

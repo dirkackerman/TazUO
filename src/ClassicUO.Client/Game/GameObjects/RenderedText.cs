@@ -379,6 +379,7 @@ namespace ClassicUO.Game
             int dheight,
             int offsetX,
             int offsetY,
+            float layerDepth,
             ushort hue = 0
         )
         {
@@ -457,7 +458,8 @@ namespace ClassicUO.Game
                 Texture,
                 new Rectangle(dx, dy, dwidth, dheight),
                 new Rectangle(srcX, srcY, srcWidth, srcHeight),
-                hueVector
+                hueVector,
+                layerDepth
             );
 
             return true;
@@ -471,6 +473,7 @@ namespace ClassicUO.Game
             int sy,
             int swidth,
             int sheight,
+            float layerDepth,
             int hue = -1
         )
         {
@@ -525,13 +528,14 @@ namespace ClassicUO.Game
                 Texture,
                 new Vector2(dx, dy),
                 new Rectangle(sx, sy, swidth, sheight),
-                hueVector
+                hueVector,
+                layerDepth
             );
 
             return true;
         }
 
-        public bool Draw(UltimaBatcher2D batcher, int x, int y, float alpha = 1, ushort hue = 0)
+        public bool Draw(UltimaBatcher2D batcher, int x, int y, float layerDepth, float alpha = 1, ushort hue = 0)
         {
             if (string.IsNullOrEmpty(Text) || Texture == null || IsDestroyed || Texture.IsDisposed)
             {
@@ -570,7 +574,7 @@ namespace ClassicUO.Game
                 hueVector.Y = 0;
             }
 
-            batcher.Draw(Texture, new Rectangle(x, y, Width, Height), hueVector);
+            batcher.Draw(Texture, new Rectangle(x, y, Width, Height), hueVector, layerDepth);
 
             return true;
         }

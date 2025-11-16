@@ -1,55 +1,65 @@
 ﻿// SPDX-License-Identifier: BSD-2-Clause
 
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class ColorBox : Control
 {
-    public class ColorBox : Control
+    protected Vector3 HueVector;
+
+    public ColorBox(int width, int height, ushort hue)
     {
-        private ushort hue;
-        protected Vector3 hueVector;
+        CanMove = false;
+        Width = width;
+        Height = height;
+        Hue = hue;
+        WantUpdateSize = false;
+    }
 
-        public ColorBox(int width, int height, ushort hue)
+    public ushort Hue
+    {
+        get;
+        set
         {
-            CanMove = false;
-            Width = width;
-            Height = height;
-            Hue = hue;
-            WantUpdateSize = false;
+            field = value;
+            HueVector = ShaderHueTranslator.GetHueVector(value, false, Alpha);
         }
+    }
 
-        public ushort Hue
-        {
-            get => hue; set
+    public override void AlphaChanged(float oldValue, float newValue)
+    {
+        base.AlphaChanged(oldValue, newValue);
+        HueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
+    }
+
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        float layerDepth = layerDepthRef;
+
+        renderLists.AddGumpNoAtlas
+        ((batcher) =>
             {
-                hue = value;
-                hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
-            }
-        }
-
-        public override void AlphaChanged(float oldValue, float newValue)
-        {
-            base.AlphaChanged(oldValue, newValue);
-            hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
-        }
-
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            batcher.Draw
-            (
-                SolidColorTextureCache.GetTexture(Color.White),
-                new Rectangle
+                batcher.Draw
                 (
-                    x,
-                    y,
-                    Width,
-                    Height
-                ),
-                hueVector
-            );
+                    SolidColorTextureCache.GetTexture(Color.White),
+                    new Rectangle
+                    (
+                        x,
+                        y,
+                        Width,
+                        Height
+                    ),
+                    HueVector,
+                    layerDepth
+                );
 
-            return true;
-        }
+                return true;
+            }
+        );
+
+        return true;
     }
 }

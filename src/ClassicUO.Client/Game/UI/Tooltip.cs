@@ -172,7 +172,8 @@ namespace ClassicUO.Game.UI
                     (int)(z_width * zoom),
                     (int)(z_height * zoom)
                 ),
-                hue_vec
+                hue_vec,
+                0f
             );
 
             hue_vec = ShaderHueTranslator.GetHueVector(0, false, alpha);
@@ -184,7 +185,8 @@ namespace ClassicUO.Game.UI
                 y - 2,
                 (int)(z_width * zoom),
                 (int)(z_height * zoom),
-                hue_vec
+                hue_vec,
+                0f
             );
 
             _textBox.Draw(batcher, x, y);

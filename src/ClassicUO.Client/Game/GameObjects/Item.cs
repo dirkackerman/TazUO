@@ -526,7 +526,7 @@ namespace ClassicUO.Game.GameObjects
                 p.X += (int)Offset.X + 22;
                 p.Y += (int)(Offset.Y - Offset.Z) + 22;
 
-                p = Client.Game.Scene.Camera.WorldToScreen(p);
+                p = Client.Game.Scene.Camera.WorldToScreen(p, true);
 
                 for (; last != null; last = (TextObject)last.Previous)
                 {

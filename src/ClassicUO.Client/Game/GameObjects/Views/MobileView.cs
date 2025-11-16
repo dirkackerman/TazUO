@@ -71,7 +71,7 @@ namespace ClassicUO.Game.GameObjects
                     profile.PartyAura && inParty
                         ? profile.PartyAuraHue
                         : Notoriety.GetHue(NotorietyFlag),
-                    depth + 1f
+                    depth
                 );
             }
 

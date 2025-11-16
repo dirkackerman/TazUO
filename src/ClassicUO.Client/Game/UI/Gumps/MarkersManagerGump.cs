@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Resources;
 using Microsoft.Xna.Framework.Graphics;
 using static ClassicUO.Game.UI.Gumps.WorldMapGump;
@@ -319,10 +320,15 @@ namespace ClassicUO.Game.UI.Gumps
                 Width = Height = 15;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
+                float layerDepth = layerDepthRef;
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
-                batcher.Draw(Texture, new Rectangle(x, y + 7, Width, Height), hueVector);
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    batcher.Draw(Texture, new Rectangle(x, y + 7, Width, Height), hueVector, layerDepth);
+                    return true;
+                });
                 return true;
             }
         }

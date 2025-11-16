@@ -3,168 +3,165 @@
 using System.Collections.Generic;
 using ClassicUO.Input;
 using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 
-namespace ClassicUO.Game.UI.Controls
+namespace ClassicUO.Game.UI.Controls;
+
+public class NiceButton : HitBox
 {
-    public class NiceButton : HitBox
+    private readonly ButtonAction _action;
+    private readonly int _groupnumber;
+    public Color? BackgroundColor { get; set; } = null;
+    public bool DisplayBorder;
+
+    public NiceButton
+    (
+        int x,
+        int y,
+        int w,
+        int h,
+        ButtonAction action,
+        string text,
+        int groupnumber = 0,
+        TEXT_ALIGN_TYPE align = TEXT_ALIGN_TYPE.TS_CENTER,
+        ushort hue = 0xFFFF,
+        bool unicode = true,
+        byte font = 0xFF
+    ) : base(x, y, w, h)
     {
-        private readonly ButtonAction _action;
-        private readonly int _groupnumber;
-        private bool _isSelected;
-        public Color? BackgroundColor { get; set; } = null;
-        public bool DisplayBorder;
+        _action = action;
 
-        public NiceButton
+        Add
         (
-            int x,
-            int y,
-            int w,
-            int h,
-            ButtonAction action,
-            string text,
-            int groupnumber = 0,
-            TEXT_ALIGN_TYPE align = TEXT_ALIGN_TYPE.TS_CENTER,
-            ushort hue = 0xFFFF,
-            bool unicode = true,
-            byte font = 0xFF
-        ) : base(x, y, w, h)
-        {
-            _action = action;
-
-            Add
+            TextLabel = new Label
             (
-                TextLabel = new Label
-                (
-                    text,
-                    unicode,
-                    hue,
-                    w,
-                    font,
-                    FontStyle.BlackBorder | FontStyle.Cropped,
-                    align
-                )
-            );
+                text,
+                unicode,
+                hue,
+                w,
+                font,
+                FontStyle.BlackBorder | FontStyle.Cropped,
+                align
+            )
+        );
 
-            TextLabel.Y = (h - TextLabel.Height) >> 1;
-            _groupnumber = groupnumber;
-        }
+        TextLabel.Y = (h - TextLabel.Height) >> 1;
+        _groupnumber = groupnumber;
+    }
 
-        internal Label TextLabel { get; }
+    internal Label TextLabel { get; }
 
-        public int ButtonParameter { get; set; }
+    public int ButtonParameter { get; set; }
 
-        public bool IsSelectable { get; set; } = true;
+    public bool IsSelectable { get; set; } = true;
 
-        public bool IsSelected
+    public bool IsSelected
+    {
+        get => field && IsSelectable;
+        set
         {
-            get => _isSelected && IsSelectable;
-            set
+            if (!IsSelectable) return;
+
+            field = value;
+
+            if (value)
             {
-                if (!IsSelectable)
-                {
-                    return;
-                }
+                Control p = Parent;
 
-                _isSelected = value;
+                if (p == null) return;
 
-                if (value)
-                {
-                    Control p = Parent;
+                IEnumerable<NiceButton> list = p.FindControls<NiceButton>();
 
-                    if (p == null)
-                    {
-                        return;
-                    }
-
-                    IEnumerable<NiceButton> list = p.FindControls<NiceButton>();
-
-                    foreach (NiceButton b in list)
-                    {
-                        if (b != this && b._groupnumber == _groupnumber)
-                        {
-                            b.IsSelected = false;
-                        }
-                    }
-                }
+                foreach (NiceButton b in list)
+                    if (b != this && b._groupnumber == _groupnumber)
+                        b.IsSelected = false;
             }
         }
+    }
 
-        public bool AlwaysShowBackground;
-        
-        internal static NiceButton GetSelected(Control p, int group)
+    public bool AlwaysShowBackground;
+
+    internal static NiceButton GetSelected(Control p, int group)
+    {
+        IEnumerable<NiceButton> list = p.FindControls<NiceButton>();
+
+        foreach (NiceButton b in list)
+            if (b._groupnumber == group && b.IsSelected)
+                return b;
+
+        return null;
+    }
+
+    protected override void OnMouseUp(int x, int y, MouseButtonType button)
+    {
+        if (button == MouseButtonType.Left)
         {
-            IEnumerable<NiceButton> list = p.FindControls<NiceButton>();
+            IsSelected = true;
 
-            foreach (NiceButton b in list)
-            {
-                if (b._groupnumber == group && b.IsSelected)
-                {
-                    return b;
-                }
-            }
-
-            return null;
+            if (_action == ButtonAction.SwitchPage)
+                ChangePage(ButtonParameter);
+            else
+                OnButtonClick(ButtonParameter);
         }
+    }
 
-        protected override void OnMouseUp(int x, int y, MouseButtonType button)
-        {
-            if (button == MouseButtonType.Left)
-            {
-                IsSelected = true;
+    public void SetBackgroundHue(ushort hue) => Hue = hue;
 
-                if (_action == ButtonAction.SwitchPage)
-                {
-                    ChangePage(ButtonParameter);
-                }
-                else
-                {
-                    OnButtonClick(ButtonParameter);
-                }
-            }
-        }
+    public void SetText(string text) => TextLabel.Text = text;
 
-        public void SetBackgroundHue(ushort hue) => Hue = hue;
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    {
+        if (IsDisposed) return false;
 
-        public void SetText(string text) => TextLabel.Text = text;
+        float layerDepth = layerDepthRef;
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            if (BackgroundColor.HasValue)
+        if (BackgroundColor.HasValue)
+            renderLists.AddGumpNoAtlas(batcher =>
             {
                 batcher.Draw
                 (
                     SolidColorTextureCache.GetTexture(BackgroundColor.Value),
                     new Rectangle(x, y, Width, Height),
-                    ShaderHueTranslator.GetHueVector(0, false, Alpha)
+                    ShaderHueTranslator.GetHueVector(0, false, Alpha),
+                    layerDepth
                 );
-            }
+                return true;
+            });
 
-            if (IsSelected || AlwaysShowBackground)
+        if (IsSelected || AlwaysShowBackground)
+        {
+            Vector3 hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
+
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
-
                 batcher.Draw
                 (
-                    _texture,
+                    Texture,
                     new Vector2(x, y),
                     new Rectangle(0, 0, Width, Height),
-                    hueVector
+                    hueVector,
+                    layerDepth
                 );
-            }
+                return true;
+            });
+        }
 
-            if (DisplayBorder)
+        if (DisplayBorder)
+            renderLists.AddGumpNoAtlas(batcher =>
             {
                 batcher.DrawRectangle(
                     SolidColorTextureCache.GetTexture(Color.LightGray),
                     x, y,
                     Width, Height,
-                    ShaderHueTranslator.GetHueVector(0, false, Alpha)
-                    );
-            }
+                    ShaderHueTranslator.GetHueVector(0, false, Alpha),
+                    layerDepth
+                );
 
-            return base.Draw(batcher, x, y);
-        }
+                return true;
+            });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
     }
 }

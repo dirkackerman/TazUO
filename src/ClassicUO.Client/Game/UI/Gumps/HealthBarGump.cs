@@ -15,6 +15,7 @@ using Microsoft.Xna.Framework.Graphics;
 using SDL3;
 using ClassicUO.Assets;
 using System.Text.Json.Serialization;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -385,20 +386,19 @@ namespace ClassicUO.Game.UI.Gumps
             base.OnMouseOver(x, y);
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)        {
             if (IsDisposed)
             {
                 return false;
             }
 
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
 
             if (Keyboard.Alt && UIManager.MouseOverControl != null && (UIManager.MouseOverControl == this || UIManager.MouseOverControl.RootParent == this))
             {
                 Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-                ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(0x82C);
+                SpriteInfo texture = Client.Game.UO.Gumps.GetGump(0x82C);
 
                 if (texture.Texture != null)
                 {
@@ -407,13 +407,22 @@ namespace ClassicUO.Game.UI.Gumps
                         hueVector.X = 34;
                         hueVector.Y = 1;
                     }
-                    batcher.Draw
-                    (
-                        texture.Texture,
-                        new Vector2(x, y),
-                        texture.UV,
-                        hueVector
-                    );
+
+                    float layerDepth = layerDepthRef;
+
+                    renderLists.AddGumpNoAtlas(batcher =>
+                    {
+                        batcher.Draw
+                        (
+                            texture.Texture,
+                            new Vector2(x, y),
+                            texture.UV,
+                            hueVector,
+                            layerDepth
+                        );
+                        return true;
+                    });
+
                 }
             }
 
@@ -1395,21 +1404,30 @@ namespace ClassicUO.Game.UI.Gumps
             public int LineWidth { get; set; }
             public Texture2D LineColor { get; set; }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
             {
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
+                if (IsDisposed) return false;
 
-                batcher.Draw
-                (
-                    LineColor,
-                    new Rectangle
-                    (
-                        x,
-                        y,
-                        LineWidth,
-                        Height
-                    ),
-                    hueVector
+                float layerDepth = layerDepthRef;
+                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
+                renderLists.AddGumpNoAtlas(
+                    batcher =>
+                    {
+                        batcher.Draw
+                        (
+                            LineColor,
+                            new Rectangle
+                            (
+                                x,
+                                y,
+                                LineWidth,
+                                Height
+                            ),
+                            hueVector,
+                            layerDepth
+                        );
+                        return true;
+                    }
                 );
 
                 return true;

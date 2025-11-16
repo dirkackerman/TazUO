@@ -12,6 +12,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using ClassicUO.Utility;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace ClassicUO.Game.Managers
 {
@@ -20,12 +22,11 @@ namespace ClassicUO.Game.Managers
         private static readonly ConcurrentDictionary<uint, Point> _gumpPositionCache = new();
         private static readonly Control[] _mouseDownControls = new Control[0xFF];
 
-
-        //private static readonly Dictionary<uint, TargetLineGump> _targetLineGumps = new Dictionary<uint, TargetLineGump>();
         private static Point _dragOrigin;
         private static bool _isDraggingControl;
         private static Control _keyboardFocusControl, _lastFocus;
         private static bool _needSort;
+        private static readonly RenderLists _renderLists = new();
 
         public static World World { get; set; }
 
@@ -426,18 +427,26 @@ namespace ClassicUO.Game.Managers
 
         public static void Draw(UltimaBatcher2D batcher)
         {
+            _renderLists.Clear();
+
             SortControlsByInfo();
-            if (InGame && ProfileManager.CurrentProfile.GlobalScaling)
-                batcher.Begin(null, Matrix.CreateScale(ProfileManager.CurrentProfile.GlobalScale));
-            else
-                batcher.Begin();
+            batcher.Begin();
+            batcher.SetStencil(DepthStencilState.Default);
+
+            float layerDepth = -10000;
 
             for (LinkedListNode<Gump> last = Gumps.Last; last != null; last = last.Previous)
             {
                 Gump g = last.Value;
-                g.Draw(batcher, g.X, g.Y);
+                layerDepth += 10;
+                g.AddToRenderLists(_renderLists, g.X, g.Y, ref layerDepth);
             }
 
+            Profiler.EnterContext(Profiler.ProfilerContext.RENDER_FRAME_UI);
+            _renderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+            Profiler.ExitContext(Profiler.ProfilerContext.RENDER_FRAME_UI);
+
+            batcher.SetStencil(null);
             batcher.End();
         }
 
