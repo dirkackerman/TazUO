@@ -374,13 +374,14 @@ public class TextBox : Control
         base.AddToRenderLists(renderLists, x, y, ref layerDepthRef);
 
         //TODO: Add rtl support to render list
-        renderLists.AddGumpNoAtlas(batcher => Draw(batcher, x, y, _color));
+        float depth = layerDepthRef;
+        renderLists.AddGumpNoAtlas(batcher => Draw(batcher, x, y, ref depth));
 
         return true;
     }
 
-    public bool Draw(UltimaBatcher2D batcher, int x, int y) => Draw(batcher, x, y, _color);
-    public bool Draw(UltimaBatcher2D batcher, int x, int y, Color color)
+    public bool Draw(UltimaBatcher2D batcher, int x, int y, ref float layerDepth) => Draw(batcher, x, y, _color, ref layerDepth);
+    public bool Draw(UltimaBatcher2D batcher, int x, int y, Color color, ref float layerDepth)
     {
         if (IsDisposed) return false;
 
@@ -388,7 +389,7 @@ public class TextBox : Control
             x += Width / 2;
         else if (Options.Align == TextHorizontalAlignment.Right) x += Width;
 
-        _rtl.Draw(batcher, new Vector2(x, y), color * Alpha, horizontalAlignment: Options.Align);
+        _rtl.Draw(batcher, new Vector2(x, y), color * Alpha, layerDepth: layerDepth, horizontalAlignment: Options.Align);
 
         return true;
     }

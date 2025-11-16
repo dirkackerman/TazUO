@@ -189,7 +189,9 @@ namespace ClassicUO.Game.UI
                 0f
             );
 
-            _textBox.Draw(batcher, x, y);
+            float depth = 0f;
+
+            _textBox.Draw(batcher, x, y, ref depth);
 
             return true;
         }

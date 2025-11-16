@@ -243,7 +243,7 @@ namespace ClassicUO.Game.GameObjects
 
                 item.X = p.X - (item.TextBox.Width >> 1);
                 item.Y = p.Y - offY - item.TextBox.Height - item.OffsetY;
-                item.TextBox.Draw(batcher, item.X, item.Y, item.TextBox.FontColor);
+                item.TextBox.Draw(batcher, item.X, item.Y, ref layerDepth);
                 offY += item.TextBox.Height;
             }
         }

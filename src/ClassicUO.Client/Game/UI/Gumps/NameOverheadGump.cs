@@ -825,7 +825,7 @@ namespace ClassicUO.Game.UI.Gumps
                 y += 20;
             }
 
-            renderLists.AddGumpNoAtlas(batcher => _text.Draw(batcher, (int)(x + 2 + _textDrawOffset.X), (int)(y + 2 + _textDrawOffset.Y), _text.FontColor));
+            renderLists.AddGumpNoAtlas(batcher => _text.Draw(batcher, (int)(x + 2 + _textDrawOffset.X), (int)(y + 2 + _textDrawOffset.Y), ref layerDepth));
 
             return true;
         }

@@ -67,7 +67,8 @@ namespace ClassicUO.Game.Managers
                     batcher,
                     x,
                     y,
-                    highlight ? Color.Yellow : o.TextBox.FontColor);
+                    highlight ? Color.Yellow : o.TextBox.FontColor,
+                    ref layerDepth);
             }
         }
 

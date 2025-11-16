@@ -921,7 +921,7 @@ public class TTFTextInputField : Control
         {
             if (HasKeyboardFocus)
             {
-                _rendererCaret.Draw(batcher, x + _caretScreenPosition.X, y + _caretScreenPosition.Y);
+                _rendererCaret.Draw(batcher, x + _caretScreenPosition.X, y + _caretScreenPosition.Y, ref depth);
             }
         }
 

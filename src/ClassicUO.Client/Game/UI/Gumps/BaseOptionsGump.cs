@@ -1611,8 +1611,8 @@ public class BaseOptionsGump : Gump
                     if (batcher.ClipBegin(x, y, Width, Height))
                     {
                         DrawSelection(batcher, slideX, y, depth);
-                        _rendererText.Draw(batcher, slideX, y);
-                        DrawCaret(batcher, slideX, y);
+                        _rendererText.Draw(batcher, slideX, y, ref depth);
+                        DrawCaret(batcher, slideX, y, depth);
                         batcher.ClipEnd();
                     }
                     return true;
@@ -1621,11 +1621,11 @@ public class BaseOptionsGump : Gump
                 return true;
             }
 
-            protected virtual void DrawCaret(UltimaBatcher2D batcher, int x, int y)
+            protected virtual void DrawCaret(UltimaBatcher2D batcher, int x, int y, float depth)
             {
                 if (HasKeyboardFocus)
                 {
-                    _rendererCaret.Draw(batcher, x + _caretScreenPosition.X, y + _caretScreenPosition.Y);
+                    _rendererCaret.Draw(batcher, x + _caretScreenPosition.X, y + _caretScreenPosition.Y, ref depth);
                 }
             }
 
@@ -2490,7 +2490,7 @@ public class BaseOptionsGump : Gump
                                         layerDepth
                                     );
 
-                                _label.Draw(batcher, x, y, _label.FontColor);
+                                _label.Draw(batcher, x, y, ref layerDepth);
                                 return true;
                             }
                         );
@@ -2729,7 +2729,7 @@ public class BaseOptionsGump : Gump
                     );
                 }
 
-                _text.Draw(batcher, x + _text.X, y + _text.Y);
+                _text.Draw(batcher, x + _text.X, y + _text.Y, ref depth);
 
                 return true;
             });
@@ -2924,7 +2924,7 @@ public class BaseOptionsGump : Gump
 
                     batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(mx + _sliderX, y, 15, 16), hueVector, depth);
 
-                    _text?.Draw(batcher, mx + BarWidth + 2, y + (Height >> 1) - (_text.Height >> 1));
+                    _text?.Draw(batcher, mx + BarWidth + 2, y + (Height >> 1) - (_text.Height >> 1), ref depth);
 
                     return true;
                 });

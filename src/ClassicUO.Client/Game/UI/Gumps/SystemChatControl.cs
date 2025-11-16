@@ -501,6 +501,7 @@ namespace ClassicUO.Game.UI.Gumps
             int yy = TextBoxControl.Y + y - 20;
 
             LinkedListNode<ChatLineTime> last = _textEntries.Last;
+            float depth = layerDepthRef;
 
             renderLists.AddGumpNoAtlas(batcher =>
             {
@@ -518,7 +519,7 @@ namespace ClassicUO.Game.UI.Gumps
 
                         if (yy >= y)
                         {
-                            last.Value.Draw(batcher, x + 2, yy);
+                            last.Value.Draw(batcher, x + 2, yy, ref depth);
                         }
                     }
 
@@ -1013,7 +1014,7 @@ namespace ClassicUO.Game.UI.Gumps
             }
 
 
-            public bool Draw(UltimaBatcher2D batcher, int x, int y) => !IsDisposed && textBox.Draw(batcher, x, y, textBox.FontColor);
+            public bool Draw(UltimaBatcher2D batcher, int x, int y, ref float layerDepth) => !IsDisposed && textBox.Draw(batcher, x, y, ref layerDepth);
 
             public override string ToString() => Text;
 

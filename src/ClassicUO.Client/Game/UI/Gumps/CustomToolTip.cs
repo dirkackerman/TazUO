@@ -186,7 +186,7 @@ namespace ClassicUO.Game.UI.Gumps
                     depth
                 );
 
-                text.Draw(batcher, x, y);
+                text.Draw(batcher, x, y, ref depth);
 
                 return true;
             });
