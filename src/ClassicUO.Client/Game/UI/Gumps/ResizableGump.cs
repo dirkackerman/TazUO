@@ -6,6 +6,7 @@ using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using System.Xml;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -196,31 +197,39 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
             if (Keyboard.Alt && UIManager.MouseOverControl != null && (UIManager.MouseOverControl == this || UIManager.MouseOverControl.RootParent == this))
             {
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+                float depth = layerDepth;
 
-                ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(0x82C);
-
-                if (texture.Texture != null)
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    if (_isLocked)
+                    Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+
+                    ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(0x82C);
+
+                    if (texture.Texture != null)
                     {
-                        hueVector.X = 34;
-                        hueVector.Y = 1;
+                        if (_isLocked)
+                        {
+                            hueVector.X = 34;
+                            hueVector.Y = 1;
+                        }
+                        batcher.Draw
+                        (
+                            texture.Texture,
+                            new Vector2(x, y),
+                            texture.UV,
+                            hueVector,
+                            depth
+                        );
                     }
-                    batcher.Draw
-                    (
-                        texture.Texture,
-                        new Vector2(x, y),
-                        texture.UV,
-                        hueVector
-                    );
-                }
+
+                    return true;
+                });
             }
 
             return true;

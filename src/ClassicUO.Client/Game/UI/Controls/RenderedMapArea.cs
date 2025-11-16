@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using ClassicUO.Assets;
 using ClassicUO.Game.GameObjects;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using ClassicUO.Utility;
 using ClassicUO.Utility.Logging;
@@ -35,13 +36,19 @@ public class RenderedMapArea : Control
         Log.Debug($"Rendering map -{mapIndex}- [Control data: {x}, {y}, {width}, {height}.] [Map area requested: {mapRenderArea.Left}, {mapRenderArea.Top}, {mapRenderArea.Right}, {mapRenderArea.Bottom}]");
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        if (!base.Draw(batcher, x, y)) return false;
+        if (!base.AddToRenderLists(renderLists, x, y, ref layerDepth)) return false;
 
         if (!_textureCache.TryGetValue(_mapIndex, out Texture2D _texture)) return false;
 
-        batcher.Draw(_texture, new Rectangle(x, y, Width, Height), new Rectangle(_mapRenderArea.Left, _mapRenderArea.Top, _mapRenderArea.Width, _mapRenderArea.Height), ShaderHueTranslator.GetHueVector(0, false, Alpha));
+        float depth = layerDepth;
+
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            batcher.Draw(_texture, new Rectangle(x, y, Width, Height), new Rectangle(_mapRenderArea.Left, _mapRenderArea.Top, _mapRenderArea.Width, _mapRenderArea.Height), ShaderHueTranslator.GetHueVector(0, false, Alpha), depth);
+            return true;
+        });
 
         return true;
     }

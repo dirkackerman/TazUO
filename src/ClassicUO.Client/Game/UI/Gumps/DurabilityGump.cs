@@ -6,6 +6,7 @@ using ClassicUO.Assets;
 using ClassicUO.Game.Data;
 using ClassicUO.Game.GameObjects;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
@@ -29,17 +30,23 @@ namespace ClassicUO.Game.UI.Gumps
 
         public override bool AcceptMouseInput => DurabilityManager.HasDurabilityData;
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(Graphic);
+            SpriteInfo texture = Client.Game.UO.Gumps.GetGump(Graphic);
 
             if (texture.Texture != null && DurabilityManager.HasDurabilityData)
             {
-                var rect = new Rectangle(x, y, Width, Height);
-                batcher.Draw(texture.Texture, rect, texture.UV, ShaderHueTranslator.GetHueVector(0));
+                float depth = layerDepth;
+
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    var rect = new Rectangle(x, y, Width, Height);
+                    batcher.Draw(texture.Texture, rect, texture.UV, ShaderHueTranslator.GetHueVector(0), depth);
+                    return true;
+                });
             }
 
-            return base.Draw(batcher, x, y);
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
         }
 
         protected override void OnMouseUp(int x, int y, MouseButtonType button)

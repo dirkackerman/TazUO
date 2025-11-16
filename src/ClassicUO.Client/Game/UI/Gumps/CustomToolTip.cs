@@ -5,6 +5,7 @@ using ClassicUO.Game.UI.Controls;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using System.Threading.Tasks;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -125,9 +126,9 @@ namespace ClassicUO.Game.UI.Gumps
             text?.Dispose();
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
             if (IsDisposed)
                 return false;
@@ -154,32 +155,41 @@ namespace ClassicUO.Game.UI.Gumps
             if (ProfileManager.CurrentProfile != null)
                 hue_vec.X = ProfileManager.CurrentProfile.ToolTipBGHue;
 
-            batcher.Draw
-            (
-                SolidColorTextureCache.GetTexture(Color.White),
-                new Rectangle
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw
                 (
+                    SolidColorTextureCache.GetTexture(Color.White),
+                    new Rectangle
+                    (
+                        x - 4,
+                        y - 2,
+                        (int)(Width + 8),
+                        (int)(Height + 8)
+                    ),
+                    hue_vec,
+                    depth
+                );
+
+                Vector3 hue_vec2 = ShaderHueTranslator.GetHueVector(0, false, alpha);
+
+                batcher.DrawRectangle
+                (
+                    SolidColorTextureCache.GetTexture(Color.Gray),
                     x - 4,
                     y - 2,
                     (int)(Width + 8),
-                    (int)(Height + 8)
-                ),
-                hue_vec
-            );
+                    (int)(Height + 8),
+                    hue_vec2,
+                    depth
+                );
 
-            hue_vec = ShaderHueTranslator.GetHueVector(0, false, alpha);
+                text.Draw(batcher, x, y);
 
-            batcher.DrawRectangle
-            (
-                SolidColorTextureCache.GetTexture(Color.Gray),
-                x - 4,
-                y - 2,
-                (int)(Width + 8),
-                (int)(Height + 8),
-                hue_vec
-            );
-
-            text.Draw(batcher, x, y);
+                return true;
+            });
 
             return true;
         }

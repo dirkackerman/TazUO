@@ -1,3 +1,4 @@
+using ClassicUO.Game.Scenes;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
@@ -54,7 +55,7 @@ public class ModernScrollBar : ScrollBarBase
         CalculateThumbRect();
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (Height <= 0 || !IsVisible)
             return false;
@@ -65,63 +66,74 @@ public class ModernScrollBar : ScrollBarBase
         Color thumbColor = _thumbPressed ? ThumbPressedColor :
             (_thumbHovered ? ThumbHoverColor : ThumbColor);
 
-        batcher.DrawRectangle(
-            SolidColorTextureCache.GetTexture(trackColor),
-            x + _trackRect.X,
-            y + _trackRect.Y,
-            _trackRect.Width,
-            _trackRect.Height,
-            ShaderHueTranslator.GetHueVector(0)
-        );
+        float depth = layerDepth;
 
-        if (MaxValue > MinValue)
+        renderLists.AddGumpNoAtlas(batcher =>
         {
             batcher.DrawRectangle(
-                SolidColorTextureCache.GetTexture(thumbColor),
-                x + _thumbRect.X,
-                y + _thumbRect.Y,
-                _thumbRect.Width,
-                _thumbRect.Height,
-                ShaderHueTranslator.GetHueVector(0)
+                SolidColorTextureCache.GetTexture(trackColor),
+                x + _trackRect.X,
+                y + _trackRect.Y,
+                _trackRect.Width,
+                _trackRect.Height,
+                ShaderHueTranslator.GetHueVector(0),
+                depth
             );
-        }
 
-        batcher.DrawRectangle(
-            SolidColorTextureCache.GetTexture(upButtonColor),
-            x + _rectUpButton.X,
-            y + _rectUpButton.Y,
-            _rectUpButton.Width,
-            _rectUpButton.Height,
-            ShaderHueTranslator.GetHueVector(0)
-        );
+            if (MaxValue > MinValue)
+            {
+                batcher.DrawRectangle(
+                    SolidColorTextureCache.GetTexture(thumbColor),
+                    x + _thumbRect.X,
+                    y + _thumbRect.Y,
+                    _thumbRect.Width,
+                    _thumbRect.Height,
+                    ShaderHueTranslator.GetHueVector(0),
+                    depth
+                );
+            }
 
-        batcher.DrawRectangle(
-            SolidColorTextureCache.GetTexture(downButtonColor),
-            x + _rectDownButton.X,
-            y + _rectDownButton.Y,
-            _rectDownButton.Width,
-            _rectDownButton.Height,
-            ShaderHueTranslator.GetHueVector(0)
-        );
+            batcher.DrawRectangle(
+                SolidColorTextureCache.GetTexture(upButtonColor),
+                x + _rectUpButton.X,
+                y + _rectUpButton.Y,
+                _rectUpButton.Width,
+                _rectUpButton.Height,
+                ShaderHueTranslator.GetHueVector(0),
+                depth
+            );
 
-        DrawArrows(batcher, x, y);
+            batcher.DrawRectangle(
+                SolidColorTextureCache.GetTexture(downButtonColor),
+                x + _rectDownButton.X,
+                y + _rectDownButton.Y,
+                _rectDownButton.Width,
+                _rectDownButton.Height,
+                ShaderHueTranslator.GetHueVector(0),
+                depth
+            );
 
-        return base.Draw(batcher, x, y);
+            DrawArrows(batcher, x, y, depth);
+
+            return true;
+        });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 
-    private void DrawArrows(UltimaBatcher2D batcher, int x, int y)
+    private void DrawArrows(UltimaBatcher2D batcher, int x, int y, float depth)
     {
         int arrowSize = 6;
         int centerX = x + Width / 2;
 
         int upArrowY = y + _rectUpButton.Y + _rectUpButton.Height / 2;
-        DrawUpArrow(batcher, centerX, upArrowY, arrowSize);
+        DrawUpArrow(batcher, centerX, upArrowY, arrowSize, depth);
 
         int downArrowY = y + _rectDownButton.Y + _rectDownButton.Height / 2;
-        DrawDownArrow(batcher, centerX, downArrowY, arrowSize);
+        DrawDownArrow(batcher, centerX, downArrowY, arrowSize, depth);
     }
 
-    private void DrawUpArrow(UltimaBatcher2D batcher, int centerX, int centerY, int size)
+    private void DrawUpArrow(UltimaBatcher2D batcher, int centerX, int centerY, int size, float depth)
     {
         int halfSize = size / 2;
         for (int i = 0; i < halfSize; i++)
@@ -132,12 +144,13 @@ public class ModernScrollBar : ScrollBarBase
                 centerY - halfSize + i,
                 2 * i + 1,
                 1,
-                ShaderHueTranslator.GetHueVector(0)
+                ShaderHueTranslator.GetHueVector(0),
+                depth
             );
         }
     }
 
-    private void DrawDownArrow(UltimaBatcher2D batcher, int centerX, int centerY, int size)
+    private void DrawDownArrow(UltimaBatcher2D batcher, int centerX, int centerY, int size, float depth)
     {
         int halfSize = size / 2;
         for (int i = 0; i < halfSize; i++)
@@ -148,7 +161,8 @@ public class ModernScrollBar : ScrollBarBase
                 centerY + i - halfSize,
                 2 * (halfSize - i - 1) + 1,
                 1,
-                ShaderHueTranslator.GetHueVector(0)
+                ShaderHueTranslator.GetHueVector(0),
+                depth
             );
         }
     }

@@ -1,4 +1,5 @@
-﻿using ClassicUO.Renderer;
+﻿using ClassicUO.Game.Scenes;
+using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 
 namespace ClassicUO.Game.UI.Controls;
@@ -29,26 +30,33 @@ public class SimpleBorder : Control
         hueVector = ShaderHueTranslator.GetHueVector(Hue, false, newValue);
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (IsDisposed)
         {
             return false;
         }
 
-        base.Draw(batcher, x, y);
+        base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
         if (hueVector == default)
         {
             hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
         }
 
-        batcher.DrawRectangle(
-            SolidColorTextureCache.GetTexture(Color.White),
-            x, y,
-            _width, _height,
-            hueVector
-        );
+        float depth = layerDepth;
+
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            batcher.DrawRectangle(
+                SolidColorTextureCache.GetTexture(Color.White),
+                x, y,
+                _width, _height,
+                hueVector,
+                depth
+            );
+            return true;
+        });
 
         return true;
     }

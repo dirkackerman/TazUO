@@ -5,6 +5,7 @@ using ClassicUO.Configuration;
 using ClassicUO.Game.Data;
 using ClassicUO.Game.GameObjects;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Game.UI.Gumps.GridHighLight;
 using ClassicUO.Input;
@@ -377,17 +378,14 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-        {
-            // auto-close if nothing is selected
-            if (SelectedCount == 0 || MoveItems.IsEmpty)
-            {
-                ClearAll();
-                Dispose();
-                return false;
-            }
+        public override void PreDraw() {
+            base.PreDraw();
 
-            return base.Draw(batcher, x, y);
+                if (SelectedCount == 0 || MoveItems.IsEmpty)
+                {
+                    ClearAll();
+                    Dispose();
+                }
         }
 
         private static string TextForHeader()

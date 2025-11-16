@@ -1,5 +1,6 @@
 using ClassicUO.Assets;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Gumps;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
@@ -127,10 +128,17 @@ public class DiscordUserListItem : Control
         SetSelected();
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        base.Draw(batcher, x, y);
-        batcher.DrawRectangle(SolidColorTextureCache.GetTexture(Color.White),x + sx, y + sy, sw, sh, shue);
+        base.AddToRenderLists(renderLists, x, y, ref layerDepth);
+
+        float depth = layerDepth;
+
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            batcher.DrawRectangle(SolidColorTextureCache.GetTexture(Color.White), x + sx, y + sy, sw, sh, shue, depth);
+            return true;
+        });
 
         return true;
     }

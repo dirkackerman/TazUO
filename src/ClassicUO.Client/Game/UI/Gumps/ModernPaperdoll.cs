@@ -490,7 +490,7 @@ this.world = world;
                 return (ushort)(animID + offset);
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
                 if (item == null)
                 {
@@ -510,7 +510,7 @@ this.world = world;
                     true
                 );
 
-                ref readonly SpriteInfo texture = ref Client.Game.UO.Arts.GetArt((uint)item.DisplayedGraphic);
+                SpriteInfo texture = Client.Game.UO.Arts.GetArt((uint)item.DisplayedGraphic);
                 Rectangle _rect = Client.Game.UO.Arts.GetRealArtBounds((uint)item.DisplayedGraphic);
 
 
@@ -543,25 +543,33 @@ this.world = world;
 
                 if (texture.Texture != null)
                 {
-                    batcher.Draw
-                    (
-                        texture.Texture,
-                        new Rectangle
+                    float depth = layerDepth;
+
+                    renderLists.AddGumpNoAtlas(batcher =>
+                    {
+                        batcher.Draw
                         (
-                            x + _point.X,
-                            y + _point.Y,
-                            _originalSize.X,
-                            _originalSize.Y
-                        ),
-                        new Rectangle
-                        (
-                            texture.UV.X + _rect.X,
-                            texture.UV.Y + _rect.Y,
-                            _rect.Width,
-                            _rect.Height
-                        ),
-                        hueVector
-                    );
+                            texture.Texture,
+                            new Rectangle
+                            (
+                                x + _point.X,
+                                y + _point.Y,
+                                _originalSize.X,
+                                _originalSize.Y
+                            ),
+                            new Rectangle
+                            (
+                                texture.UV.X + _rect.X,
+                                texture.UV.Y + _rect.Y,
+                                _rect.Width,
+                                _rect.Height
+                            ),
+                            hueVector,
+                            depth
+                        );
+
+                        return true;
+                    });
 
                     return true;
                 }

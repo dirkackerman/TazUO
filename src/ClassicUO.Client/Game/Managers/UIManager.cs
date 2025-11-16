@@ -442,9 +442,7 @@ namespace ClassicUO.Game.Managers
                 g.AddToRenderLists(_renderLists, g.X, g.Y, ref layerDepth);
             }
 
-            Profiler.EnterContext(Profiler.ProfilerContext.RENDER_FRAME_UI);
             _renderLists.DrawRenderLists(batcher, sbyte.MaxValue);
-            Profiler.ExitContext(Profiler.ProfilerContext.RENDER_FRAME_UI);
 
             batcher.SetStencil(null);
             batcher.End();

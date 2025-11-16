@@ -6,6 +6,7 @@ using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -176,9 +177,9 @@ namespace ClassicUO.Game.UI.Gumps
                 }
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
-                base.Draw(batcher, x, y);
+                base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
                 if (texture != null)
                 {
@@ -200,25 +201,33 @@ namespace ClassicUO.Game.UI.Gumps
                         }
 
                     }
-                    batcher.Draw
-                    (
-                        texture,
-                        new Rectangle
+
+                    float depth = layerDepth;
+
+                    renderLists.AddGumpNoAtlas(batcher =>
+                    {
+                        batcher.Draw
                         (
-                            x,
-                            y,
-                            Width,
-                            Height
-                        ),
-                        new Rectangle
-                        (
-                            bounds.X + rect.X,
-                            bounds.Y + rect.Y,
-                            rect.Width,
-                            rect.Height
-                        ),
-                        hueVector
-                    );
+                            texture,
+                            new Rectangle
+                            (
+                                x,
+                                y,
+                                Width,
+                                Height
+                            ),
+                            new Rectangle
+                            (
+                                bounds.X + rect.X,
+                                bounds.Y + rect.Y,
+                                rect.Width,
+                                rect.Height
+                            ),
+                            hueVector,
+                            depth
+                        );
+                        return true;
+                    });
                 }
                 return true;
             }

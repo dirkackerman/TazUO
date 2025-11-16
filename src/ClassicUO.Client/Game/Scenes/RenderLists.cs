@@ -3,6 +3,7 @@ using ClassicUO.Game.GameObjects;
 using ClassicUO.Renderer;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ClassicUO.Game.Scenes;
 
@@ -123,7 +124,6 @@ public class RenderLists
         int done = 0;
 
         foreach (GameObject obj in renderList)
-        {
             if (obj.Z <= maxGroundZ)
             {
                 float depth = obj.CalculateDepthZ();
@@ -133,38 +133,11 @@ public class RenderLists
                     done++;
                 }
             }
-        }
 
         return done;
     }
 
-    private static int DrawRenderListWithAtlas(UltimaBatcher2D batcher, List<Func<UltimaBatcher2D, bool>> renderList)
-    {
-        int done = 0;
+    private static int DrawRenderListWithAtlas(UltimaBatcher2D batcher, List<Func<UltimaBatcher2D, bool>> renderList) => renderList.Count(obj => obj.Invoke(batcher));
 
-        foreach (Func<UltimaBatcher2D, bool> obj in renderList)
-        {
-            if (obj.Invoke(batcher))
-            {
-                done++;
-            }
-        }
-
-        return done;
-    }
-
-    private static int DrawRenderListNoAtlas(UltimaBatcher2D batcher, List<Func<UltimaBatcher2D, bool>> renderList)
-    {
-        int done = 0;
-
-        foreach (Func<UltimaBatcher2D, bool> obj in renderList)
-        {
-            if (obj.Invoke(batcher))
-            {
-                done++;
-            }
-        }
-
-        return done;
-    }
+    private static int DrawRenderListNoAtlas(UltimaBatcher2D batcher, List<Func<UltimaBatcher2D, bool>> renderList) => renderList.Count(obj => obj.Invoke(batcher));
 }

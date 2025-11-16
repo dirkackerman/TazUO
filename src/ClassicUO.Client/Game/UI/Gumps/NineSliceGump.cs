@@ -1,4 +1,5 @@
 using System;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
@@ -284,7 +285,7 @@ public class NineSliceGump : Gump
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (IsDisposed || !IsVisible || _customTexture == null || _customTexture.IsDisposed)
         {
@@ -292,48 +293,54 @@ public class NineSliceGump : Gump
         }
 
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha, true);
+        float depth = layerDepth;
 
-        DrawNineSlice(batcher, x, y, hueVector);
-
-        if (_resizable && _hoveredCorner != ResizeCorner.None)
+        renderLists.AddGumpNoAtlas(batcher =>
         {
-            DrawCornerHighlight(batcher, x, y);
-        }
+            DrawNineSlice(batcher, x, y, hueVector, depth);
 
-        return base.Draw(batcher, x, y);
+            if (_resizable && _hoveredCorner != ResizeCorner.None)
+            {
+                DrawCornerHighlight(batcher, x, y, depth);
+            }
+
+            return true;
+        });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 
-    private void DrawNineSlice(UltimaBatcher2D batcher, int x, int y, Vector3 hueVector)
+    private void DrawNineSlice(UltimaBatcher2D batcher, int x, int y, Vector3 hueVector, float depth)
     {
         // Top row
-        batcher.Draw(_customTexture, new Rectangle(x, y, _borderSize, _borderSize), _slices[0], hueVector); // Top-left
+        batcher.Draw(_customTexture, new Rectangle(x, y, _borderSize, _borderSize), _slices[0], hueVector, depth); // Top-left
         batcher.Draw(_customTexture, new Rectangle(x + _borderSize, y, Width - _borderSize * 2, _borderSize),
-            _slices[1], hueVector); // Top-center
+            _slices[1], hueVector, depth); // Top-center
         batcher.Draw(_customTexture, new Rectangle(x + Width - _borderSize, y, _borderSize, _borderSize), _slices[2],
-            hueVector); // Top-right
+            hueVector, depth); // Top-right
 
         // Middle row
         batcher.Draw(_customTexture, new Rectangle(x, y + _borderSize, _borderSize, Height - _borderSize * 2),
-            _slices[3], hueVector); // Middle-left
+            _slices[3], hueVector, depth); // Middle-left
         batcher.Draw(_customTexture,
             new Rectangle(x + _borderSize, y + _borderSize, Width - _borderSize * 2, Height - _borderSize * 2),
-            _slices[4], hueVector); // Middle-center
+            _slices[4], hueVector, depth); // Middle-center
         batcher.Draw(_customTexture,
             new Rectangle(x + Width - _borderSize, y + _borderSize, _borderSize, Height - _borderSize * 2), _slices[5],
-            hueVector); // Middle-right
+            hueVector, depth); // Middle-right
 
         // Bottom row
         batcher.Draw(_customTexture, new Rectangle(x, y + Height - _borderSize, _borderSize, _borderSize), _slices[6],
-            hueVector); // Bottom-left
+            hueVector, depth); // Bottom-left
         batcher.Draw(_customTexture,
             new Rectangle(x + _borderSize, y + Height - _borderSize, Width - _borderSize * 2, _borderSize), _slices[7],
-            hueVector); // Bottom-center
+            hueVector, depth); // Bottom-center
         batcher.Draw(_customTexture,
             new Rectangle(x + Width - _borderSize, y + Height - _borderSize, _borderSize, _borderSize), _slices[8],
-            hueVector); // Bottom-right
+            hueVector, depth); // Bottom-right
     }
 
-    private void DrawCornerHighlight(UltimaBatcher2D batcher, int x, int y)
+    private void DrawCornerHighlight(UltimaBatcher2D batcher, int x, int y, float depth)
     {
         Vector3 whiteHue = ShaderHueTranslator.GetHueVector(0, false, 0.7f, true); // White with some transparency
         Rectangle highlightRect = Rectangle.Empty;
@@ -358,7 +365,7 @@ public class NineSliceGump : Gump
         if (highlightRect != Rectangle.Empty)
         {
             // Draw a simple white rectangle as highlight - you might want to use a specific highlight texture
-            batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), highlightRect, _slices[4], whiteHue); // Use center slice for highlight
+            batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), highlightRect, _slices[4], whiteHue, depth); // Use center slice for highlight
         }
     }
 }

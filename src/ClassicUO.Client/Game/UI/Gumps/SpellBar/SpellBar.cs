@@ -5,6 +5,7 @@ using ClassicUO.Configuration;
 using ClassicUO.Game.Data;
 using ClassicUO.Game.Managers;
 using ClassicUO.Game.Managers.SpellVisualRange;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Game.UI.ImGuiControls;
 using ClassicUO.Input;
@@ -245,32 +246,40 @@ public class SpellBar : Gump
         EventSink.SpellRecoveryBegin -= EventSinkOnSpellRecoveryBegin;
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        if (!base.Draw(batcher, x, y))
+        if (!base.AddToRenderLists(renderLists, x, y, ref layerDepth))
             return false;
 
         if (Keyboard.Alt)
         {
-            Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+            float depth = layerDepth;
 
-            ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(0x82C);
-
-            if (texture.Texture != null)
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                if (IsLocked)
+                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+
+                ref readonly SpriteInfo texture = ref Client.Game.UO.Gumps.GetGump(0x82C);
+
+                if (texture.Texture != null)
                 {
-                    hueVector.X = 34;
-                    hueVector.Y = 1;
+                    if (IsLocked)
+                    {
+                        hueVector.X = 34;
+                        hueVector.Y = 1;
+                    }
+                    batcher.Draw
+                    (
+                        texture.Texture,
+                        new Vector2(x, y),
+                        texture.UV,
+                        hueVector,
+                        depth
+                    );
                 }
-                batcher.Draw
-                (
-                    texture.Texture,
-                    new Vector2(x, y),
-                    texture.UV,
-                    hueVector
-                );
-            }
+
+                return true;
+            });
         }
 
         return true;
@@ -513,9 +522,9 @@ public class SpellBar : Gump
             trackRecovery = false;
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            if (!base.Draw(batcher, x, y))
+            if (!base.AddToRenderLists(renderLists, x, y, ref layerDepth))
                 return false;
 
             if (!trackCasting && !trackRecovery)
@@ -537,18 +546,25 @@ public class SpellBar : Gump
             double castTime = trackCasting ? i.GetEffectiveCastTime() : i.GetEffectiveRecoveryTime();
             if (castTime > 0)
             {
-                double percent = (DateTime.Now - savedStateTime).TotalSeconds / castTime;
-                if (percent < 0)
-                    percent = 0;
+                float depth = layerDepth;
 
-                if (percent > 1)
-                    percent = 1;
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    double percent = (DateTime.Now - savedStateTime).TotalSeconds / castTime;
+                    if (percent < 0)
+                        percent = 0;
 
-                int filledHeight = (int)(Height * percent);
-                int yb = Height - filledHeight; // This shifts the rect up as it grows
+                    if (percent > 1)
+                        percent = 1;
 
-                Rectangle rect = new(x, y + yb, Width, filledHeight);
-                batcher.Draw(trackCasting ? castingTexture : recoveryTexture, rect, new Vector3(0, 0, 0.65f));
+                    int filledHeight = (int)(Height * percent);
+                    int yb = Height - filledHeight; // This shifts the rect up as it grows
+
+                    Rectangle rect = new(x, y + yb, Width, filledHeight);
+                    batcher.Draw(trackCasting ? castingTexture : recoveryTexture, rect, new Vector3(0, 0, 0.65f), depth);
+
+                    return true;
+                });
             }
             else
             {

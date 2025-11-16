@@ -2,6 +2,7 @@ using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using System;
+using ClassicUO.Game.Scenes;
 using XnaMathHelper = Microsoft.Xna.Framework.MathHelper;
 
 namespace ClassicUO.Game.UI.Controls;
@@ -211,27 +212,33 @@ public class ColorSelectorControl : Control
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        DrawSliders(batcher, x, y);
-        DrawPreview(batcher, x, y);
-        DrawLabels(batcher, x, y);
-        DrawHandles(batcher, x, y);
+        float depth = layerDepth;
 
-        return base.Draw(batcher, x, y);
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            DrawSliders(batcher, x, y, depth);
+            DrawPreview(batcher, x, y, depth);
+            DrawLabels(batcher, x, y, depth);
+            DrawHandles(batcher, x, y, depth);
+            return true;
+        });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 
-    private void DrawSliders(UltimaBatcher2D batcher, int x, int y)
+    private void DrawSliders(UltimaBatcher2D batcher, int x, int y, float depth)
     {
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-        DrawSliderTrack(batcher, x + _redSliderBounds.X, y + _redSliderBounds.Y, _redSliderBounds.Width, _redSliderBounds.Height, Color.Red, hueVector);
-        DrawSliderTrack(batcher, x + _greenSliderBounds.X, y + _greenSliderBounds.Y, _greenSliderBounds.Width, _greenSliderBounds.Height, Color.Green, hueVector);
-        DrawSliderTrack(batcher, x + _blueSliderBounds.X, y + _blueSliderBounds.Y, _blueSliderBounds.Width, _blueSliderBounds.Height, Color.Blue, hueVector);
-        DrawSliderTrack(batcher, x + _alphaSliderBounds.X, y + _alphaSliderBounds.Y, _alphaSliderBounds.Width, _alphaSliderBounds.Height, Color.White, hueVector);
+        DrawSliderTrack(batcher, x + _redSliderBounds.X, y + _redSliderBounds.Y, _redSliderBounds.Width, _redSliderBounds.Height, Color.Red, hueVector, depth);
+        DrawSliderTrack(batcher, x + _greenSliderBounds.X, y + _greenSliderBounds.Y, _greenSliderBounds.Width, _greenSliderBounds.Height, Color.Green, hueVector, depth);
+        DrawSliderTrack(batcher, x + _blueSliderBounds.X, y + _blueSliderBounds.Y, _blueSliderBounds.Width, _blueSliderBounds.Height, Color.Blue, hueVector, depth);
+        DrawSliderTrack(batcher, x + _alphaSliderBounds.X, y + _alphaSliderBounds.Y, _alphaSliderBounds.Width, _alphaSliderBounds.Height, Color.White, hueVector, depth);
     }
 
-    private void DrawSliderTrack(UltimaBatcher2D batcher, int x, int y, int width, int height, Color baseColor, Vector3 hueVector)
+    private void DrawSliderTrack(UltimaBatcher2D batcher, int x, int y, int width, int height, Color baseColor, Vector3 hueVector, float depth)
     {
         var trackRect = new Rectangle(x, y, width, height);
 
@@ -251,13 +258,13 @@ public class ColorSelectorControl : Control
                 gradientColor = new Color(_red, _green, _blue, (int)(255 * intensity));
 
             var stepRect = new Rectangle(x + (i * 2), y, 2, height);
-            batcher.Draw(SolidColorTextureCache.GetTexture(gradientColor), stepRect, hueVector);
+            batcher.Draw(SolidColorTextureCache.GetTexture(gradientColor), stepRect, hueVector, depth);
         }
 
-        DrawRectangleBorder(batcher, trackRect, Color.Black, hueVector);
+        DrawRectangleBorder(batcher, trackRect, Color.Black, hueVector, depth);
     }
 
-    private void DrawPreview(UltimaBatcher2D batcher, int x, int y)
+    private void DrawPreview(UltimaBatcher2D batcher, int x, int y, float depth)
     {
         var previewRect = new Rectangle(
             x + _previewBounds.X,
@@ -271,37 +278,38 @@ public class ColorSelectorControl : Control
         batcher.Draw(
             SolidColorTextureCache.GetTexture(_selectedColor),
             previewRect,
-            hueVector
+            hueVector,
+            depth
         );
 
-        DrawRectangleBorder(batcher, previewRect, Color.Black, hueVector);
+        DrawRectangleBorder(batcher, previewRect, Color.Black, hueVector, depth);
     }
 
-    private void DrawLabels(UltimaBatcher2D batcher, int x, int y)
+    private void DrawLabels(UltimaBatcher2D batcher, int x, int y, float depth)
     {
         int centerY = SLIDER_HEIGHT / 2;
 
-        _redLabel?.Draw(batcher, x + MARGIN + 2, y + _redSliderBounds.Y + centerY - (_redLabel.Height / 2));
-        _greenLabel?.Draw(batcher, x + MARGIN + 2, y + _greenSliderBounds.Y + centerY - (_greenLabel.Height / 2));
-        _blueLabel?.Draw(batcher, x + MARGIN + 2, y + _blueSliderBounds.Y + centerY - (_blueLabel.Height / 2));
-        _alphaLabel?.Draw(batcher, x + MARGIN + 2, y + _alphaSliderBounds.Y + centerY - (_alphaLabel.Height / 2));
+        _redLabel?.Draw(batcher, x + MARGIN + 2, y + _redSliderBounds.Y + centerY - (_redLabel.Height / 2), depth);
+        _greenLabel?.Draw(batcher, x + MARGIN + 2, y + _greenSliderBounds.Y + centerY - (_greenLabel.Height / 2), depth);
+        _blueLabel?.Draw(batcher, x + MARGIN + 2, y + _blueSliderBounds.Y + centerY - (_blueLabel.Height / 2), depth);
+        _alphaLabel?.Draw(batcher, x + MARGIN + 2, y + _alphaSliderBounds.Y + centerY - (_alphaLabel.Height / 2), depth);
     }
 
-    private void DrawHandles(UltimaBatcher2D batcher, int x, int y)
+    private void DrawHandles(UltimaBatcher2D batcher, int x, int y, float depth)
     {
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-        DrawSliderHandle(batcher, x + _redHandleBounds.X, y + _redHandleBounds.Y, hueVector);
-        DrawSliderHandle(batcher, x + _greenHandleBounds.X, y + _greenHandleBounds.Y, hueVector);
-        DrawSliderHandle(batcher, x + _blueHandleBounds.X, y + _blueHandleBounds.Y, hueVector);
-        DrawSliderHandle(batcher, x + _alphaHandleBounds.X, y + _alphaHandleBounds.Y, hueVector);
+        DrawSliderHandle(batcher, x + _redHandleBounds.X, y + _redHandleBounds.Y, hueVector, depth);
+        DrawSliderHandle(batcher, x + _greenHandleBounds.X, y + _greenHandleBounds.Y, hueVector, depth);
+        DrawSliderHandle(batcher, x + _blueHandleBounds.X, y + _blueHandleBounds.Y, hueVector, depth);
+        DrawSliderHandle(batcher, x + _alphaHandleBounds.X, y + _alphaHandleBounds.Y, hueVector, depth);
     }
 
-    private void DrawSliderHandle(UltimaBatcher2D batcher, int x, int y, Vector3 hueVector)
+    private void DrawSliderHandle(UltimaBatcher2D batcher, int x, int y, Vector3 hueVector, float depth)
     {
         var handle = new Rectangle(x - 3, y - 2, 6, SLIDER_HEIGHT + 4);
-        batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), handle, hueVector);
-        DrawRectangleBorder(batcher, handle, Color.Black, hueVector);
+        batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), handle, hueVector, depth);
+        DrawRectangleBorder(batcher, handle, Color.Black, hueVector, depth);
     }
 
 
@@ -526,12 +534,12 @@ public class ColorSelectorControl : Control
     }
 
 
-    private void DrawRectangleBorder(UltimaBatcher2D batcher, Rectangle rect, Color color, Vector3 hueVector)
+    private void DrawRectangleBorder(UltimaBatcher2D batcher, Rectangle rect, Color color, Vector3 hueVector, float depth)
     {
-        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.X, rect.Y, rect.Width, 1), hueVector);
-        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.X, rect.Bottom - 1, rect.Width, 1), hueVector);
-        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.X, rect.Y, 1, rect.Height), hueVector);
-        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.Right - 1, rect.Y, 1, rect.Height), hueVector);
+        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.X, rect.Y, rect.Width, 1), hueVector, depth);
+        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.X, rect.Bottom - 1, rect.Width, 1), hueVector, depth);
+        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.X, rect.Y, 1, rect.Height), hueVector, depth);
+        batcher.Draw(SolidColorTextureCache.GetTexture(color), new Rectangle(rect.Right - 1, rect.Y, 1, rect.Height), hueVector, depth);
     }
 
     public override void Dispose()

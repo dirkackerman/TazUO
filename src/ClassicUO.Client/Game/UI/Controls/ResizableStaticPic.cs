@@ -1,4 +1,5 @@
-﻿using ClassicUO.Renderer;
+﻿using ClassicUO.Game.Scenes;
+using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 
 namespace ClassicUO.Game.UI.Controls;
@@ -28,16 +29,16 @@ public class ResizableStaticPic : Control
         Height = height;
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        base.Draw(batcher, x, y);
+        base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
         if (IsDisposed)
         {
             return false;
         }
 
-        ref readonly SpriteInfo texture = ref Client.Game.UO.Arts.GetArt(graphic);
+        SpriteInfo texture = Client.Game.UO.Arts.GetArt(graphic);
 
         Rectangle _rect = Client.Game.UO.Arts.GetRealArtBounds(graphic);
 
@@ -70,34 +71,43 @@ public class ResizableStaticPic : Control
 
         if (texture.Texture != null)
         {
-            batcher.Draw
-            (
-                texture.Texture,
-                new Rectangle
-                (
-                    x + _point.X,
-                    y + _point.Y,
-                    _originalSize.X,
-                    _originalSize.Y
-                ),
-                new Rectangle
-                (
-                    texture.UV.X + _rect.X,
-                    texture.UV.Y + _rect.Y,
-                    _rect.Width,
-                    _rect.Height
-                ),
-                hueVector
-            );
+            float depth = layerDepth;
 
-            if (DrawBorder)
-                batcher.DrawRectangle(
-                    SolidColorTextureCache.GetTexture(Color.Gray),
-                    x, y,
-                    Width - 1,
-                    Height - 1,
-                    ShaderHueTranslator.GetHueVector(hue, false, Alpha)
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw
+                (
+                    texture.Texture,
+                    new Rectangle
+                    (
+                        x + _point.X,
+                        y + _point.Y,
+                        _originalSize.X,
+                        _originalSize.Y
+                    ),
+                    new Rectangle
+                    (
+                        texture.UV.X + _rect.X,
+                        texture.UV.Y + _rect.Y,
+                        _rect.Width,
+                        _rect.Height
+                    ),
+                    hueVector,
+                    depth
                 );
+
+                if (DrawBorder)
+                    batcher.DrawRectangle(
+                        SolidColorTextureCache.GetTexture(Color.Gray),
+                        x, y,
+                        Width - 1,
+                        Height - 1,
+                        ShaderHueTranslator.GetHueVector(hue, false, Alpha),
+                        depth
+                    );
+
+                return true;
+            });
 
             return true;
         }

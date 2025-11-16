@@ -183,31 +183,39 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            background.Draw(batcher, x, y);
+            background.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
-            batcher.Draw
-            (
-                itemSpriteInfo.Texture,
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw
+                (
+                    itemSpriteInfo.Texture,
+                    new Rectangle
+                    (
+                        x + point.X,
+                        y + point.Y,
+                        originalSize.X,
+                        originalSize.Y
+                ),
                 new Rectangle
                 (
-                    x + point.X,
-                    y + point.Y,
-                    originalSize.X,
-                    originalSize.Y
-            ),
-            new Rectangle
-            (
-                    itemSpriteInfo.UV.X + realArtRectBounds.X,
-                    itemSpriteInfo.UV.Y + realArtRectBounds.Y,
-                    realArtRectBounds.Width,
-                    realArtRectBounds.Height
-                ),
-                hueVector
-            );
+                        itemSpriteInfo.UV.X + realArtRectBounds.X,
+                        itemSpriteInfo.UV.Y + realArtRectBounds.Y,
+                        realArtRectBounds.Width,
+                        realArtRectBounds.Height
+                    ),
+                    hueVector,
+                    depth
+                );
 
-            base.Draw(batcher, x, y);
+                return true;
+            });
+
+            base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
             return true;
         }

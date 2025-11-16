@@ -4,6 +4,7 @@ using ClassicUO.Game.UI.Controls;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using System;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -110,7 +111,7 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
             if (IsDisposed)
                 return false;
@@ -129,22 +130,31 @@ namespace ClassicUO.Game.UI.Gumps
                 cooldownLabel.Text = ((int)remaing.TotalSeconds).ToString();
             }
 
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
-            batcher.DrawRectangle(
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.DrawRectangle(
+                        SolidColorTextureCache.GetTexture(Color.Black),
+                        x, y,
+                        COOL_DOWN_WIDTH,
+                        COOL_DOWN_HEIGHT,
+                        ShaderHueTranslator.GetHueVector(background.Hue, false, 1f),
+                        depth
+                    );
+                batcher.DrawRectangle(
                     SolidColorTextureCache.GetTexture(Color.Black),
-                    x, y,
-                    COOL_DOWN_WIDTH,
-                    COOL_DOWN_HEIGHT,
-                    ShaderHueTranslator.GetHueVector(background.Hue, false, 1f)
+                    x + 1, y + 1,
+                    COOL_DOWN_WIDTH - 2,
+                    COOL_DOWN_HEIGHT - 2,
+                    ShaderHueTranslator.GetHueVector(background.Hue, false, 1f),
+                    depth
                 );
-            batcher.DrawRectangle(
-                SolidColorTextureCache.GetTexture(Color.Black),
-                x + 1, y + 1,
-                COOL_DOWN_WIDTH - 2,
-                COOL_DOWN_HEIGHT - 2,
-                ShaderHueTranslator.GetHueVector(background.Hue, false, 1f)
-            );
+
+                return true;
+            });
 
             return true;
         }

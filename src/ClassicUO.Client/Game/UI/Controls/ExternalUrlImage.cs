@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 
 namespace ClassicUO.Game.UI.Controls;
@@ -68,13 +69,19 @@ public class ExternalUrlImage : Control
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        base.Draw(batcher, x, y);
+        base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
         if (_texture != null && !_loading)
         {
-            batcher.Draw(_texture, new Rectangle(x, y, Width, Height), _texture.Bounds, _hue);
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw(_texture, new Rectangle(x, y, Width, Height), _texture.Bounds, _hue, depth);
+                return true;
+            });
         }
 
         return true;

@@ -1,4 +1,5 @@
-﻿using ClassicUO.Game.UI.Controls;
+﻿using ClassicUO.Game.Scenes;
+using ClassicUO.Game.UI.Controls;
 using ClassicUO.Renderer;
 
 namespace ClassicUO.Game.UI.Gumps
@@ -58,46 +59,19 @@ namespace ClassicUO.Game.UI.Gumps
             ForceSizeUpdate();
             SSWidth = Width + 9;
             SSHeight = Height + 9;
+
+            SetInScreen();
+
+            SSX = ScreenCoordinateX - 4;
+            SSY = ScreenCoordinateY - 2;
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override void PreDraw()
         {
+            base.PreDraw();
+
             if (!hoverReference.MouseIsOver)
                 Dispose();
-
-            if (Height == 0)
-            {
-                foreach (Control c in Children)
-                    if (Height < c.Height)
-                        Height = c.Height;
-            }
-
-            int z_width = Width + 24;
-            int z_height = Height + 8;
-
-            if (x < 0)
-            {
-                x = 0;
-            }
-            else if (x > Client.Game.Window.ClientBounds.Width - z_width)
-            {
-                x = Client.Game.Window.ClientBounds.Width - z_width;
-            }
-
-            if (y < 0)
-            {
-                y = 0;
-            }
-            else if (y > Client.Game.Window.ClientBounds.Height - z_height)
-            {
-                y = Client.Game.Window.ClientBounds.Height - z_height;
-            }
-
-            SSX = x - 4;
-            SSY = y - 2;
-
-            return base.Draw(batcher, x, y);
-
         }
 
         public override void Dispose()

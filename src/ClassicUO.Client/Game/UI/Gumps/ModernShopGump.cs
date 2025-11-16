@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -343,96 +344,105 @@ namespace ClassicUO.Game.UI.Gumps
                 return true;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
                 if (MouseIsOver)
                     backgound.Alpha = 0.6f;
                 else
                     backgound.Alpha = 0.01f;
 
-                base.Draw(batcher, x, y);
+                base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
-                Vector3 hueVector;
+                float depth = layerDepth;
 
-                if (isPurchase && SerialHelper.IsMobile(Serial))
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    ushort graphic = Graphic;
+                    Vector3 hueVector;
 
-                    if (graphic >= 2048)
+                    if (isPurchase && SerialHelper.IsMobile(Serial))
                     {
-                        graphic = 0;
-                    }
+                        ushort graphic = Graphic;
 
-                    byte group = GetAnimGroup(graphic);
-                    Span<SpriteInfo> frames = Client.Game.UO.Animations.GetAnimationFrames(graphic, group, 1, out ushort hue2, out _, true);
-
-                    if (frames.Length != 0)
-                    {
-                        hueVector = ShaderHueTranslator.GetHueVector(hue2, Client.Game.UO.FileManager.TileData.StaticData[Graphic].IsPartialHue, 1f);
-
-                        ref SpriteInfo spriteInfo = ref frames[0];
-
-                        if (spriteInfo.Texture != null)
+                        if (graphic >= 2048)
                         {
-                            batcher.Draw
-                            (
-                                spriteInfo.Texture,
-                                new Rectangle
+                            graphic = 0;
+                        }
+
+                        byte group = GetAnimGroup(graphic);
+                        Span<SpriteInfo> frames = Client.Game.UO.Animations.GetAnimationFrames(graphic, group, 1, out ushort hue2, out _, true);
+
+                        if (frames.Length != 0)
+                        {
+                            hueVector = ShaderHueTranslator.GetHueVector(hue2, Client.Game.UO.FileManager.TileData.StaticData[Graphic].IsPartialHue, 1f);
+
+                            ref SpriteInfo spriteInfo = ref frames[0];
+
+                            if (spriteInfo.Texture != null)
+                            {
+                                batcher.Draw
                                 (
-                                    x,
-                                    y,
-                                    Math.Min(spriteInfo.UV.Width, Height),
-                                    Math.Min(spriteInfo.UV.Height, Height)
-                                ),
-                                spriteInfo.UV,
-                                hueVector
-                            );
+                                    spriteInfo.Texture,
+                                    new Rectangle
+                                    (
+                                        x,
+                                        y,
+                                        Math.Min(spriteInfo.UV.Width, Height),
+                                        Math.Min(spriteInfo.UV.Height, Height)
+                                    ),
+                                    spriteInfo.UV,
+                                    hueVector,
+                                    depth
+                                );
+                            }
                         }
                     }
-                }
-                else
-                {
-                    ref readonly SpriteInfo texture = ref Client.Game.UO.Arts.GetArt((uint)Graphic);
-
-                    hueVector = ShaderHueTranslator.GetHueVector(Hue, Client.Game.UO.FileManager.TileData.StaticData[Graphic].IsPartialHue, 1f);
-
-                    Rectangle rect = Client.Game.UO.Arts.GetRealArtBounds(Graphic);
-
-                    var originalSize = new Point(Height, Height);
-                    var point = new Point();
-
-                    if (rect.Width < Height)
+                    else
                     {
-                        originalSize.X = rect.Width;
-                        point.X = (Height >> 1) - (originalSize.X >> 1);
+                        ref readonly SpriteInfo texture = ref Client.Game.UO.Arts.GetArt((uint)Graphic);
+
+                        hueVector = ShaderHueTranslator.GetHueVector(Hue, Client.Game.UO.FileManager.TileData.StaticData[Graphic].IsPartialHue, 1f);
+
+                        Rectangle rect = Client.Game.UO.Arts.GetRealArtBounds(Graphic);
+
+                        var originalSize = new Point(Height, Height);
+                        var point = new Point();
+
+                        if (rect.Width < Height)
+                        {
+                            originalSize.X = rect.Width;
+                            point.X = (Height >> 1) - (originalSize.X >> 1);
+                        }
+
+                        if (rect.Height < Height)
+                        {
+                            originalSize.Y = rect.Height;
+                            point.Y = (Height >> 1) - (originalSize.Y >> 1);
+                        }
+
+                        batcher.Draw
+                        (
+                            texture.Texture,
+                            new Rectangle
+                            (
+                                x + point.X,
+                                y + point.Y,
+                                originalSize.X,
+                                originalSize.Y
+                            ),
+                            new Rectangle
+                            (
+                                texture.UV.X + rect.X,
+                                texture.UV.Y + rect.Y,
+                                rect.Width,
+                                rect.Height
+                            ),
+                            hueVector,
+                            depth
+                        );
                     }
 
-                    if (rect.Height < Height)
-                    {
-                        originalSize.Y = rect.Height;
-                        point.Y = (Height >> 1) - (originalSize.Y >> 1);
-                    }
-
-                    batcher.Draw
-                    (
-                        texture.Texture,
-                        new Rectangle
-                        (
-                            x + point.X,
-                            y + point.Y,
-                            originalSize.X,
-                            originalSize.Y
-                        ),
-                        new Rectangle
-                        (
-                            texture.UV.X + rect.X,
-                            texture.UV.Y + rect.Y,
-                            rect.Width,
-                            rect.Height
-                        ),
-                        hueVector
-                    );
-                }
+                    return true;
+                });
 
                 return true;
             }
@@ -502,17 +512,25 @@ namespace ClassicUO.Game.UI.Gumps
                     }
                 }
 
-                public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+                public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
                 {
-                    base.Draw(batcher, x, y);
+                    base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
                     if (MouseIsOver)
                     {
-                        batcher.Draw(
-                            SolidColorTextureCache.GetTexture(Color.White),
-                            new Rectangle(x, y, Width, Height),
-                            new Vector3(0, 0, 0.2f)
-                            );
+                        float depth = layerDepth;
+
+                        renderLists.AddGumpNoAtlas(batcher =>
+                        {
+                            batcher.Draw(
+                                SolidColorTextureCache.GetTexture(Color.White),
+                                new Rectangle(x, y, Width, Height),
+                                new Vector3(0, 0, 0.2f),
+                                depth
+                                );
+
+                            return true;
+                        });
                     }
 
                     return true;

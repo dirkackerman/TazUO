@@ -830,14 +830,20 @@ public class BaseOptionsGump : Gump
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            if (batcher.ClipBegin(x, y, Width, Height))
+            float depth = layerDepth;
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                base.Draw(batcher, x, y);
-
-                batcher.ClipEnd();
-            }
+                if (batcher.ClipBegin(x, y, Width, Height))
+                {
+                    RenderLists childRenderLists = new();
+                    base.AddToRenderLists(childRenderLists, x, y, ref depth);
+                    childRenderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+                    batcher.ClipEnd();
+                }
+                return true;
+            });
 
             return true;
         }
@@ -1572,7 +1578,7 @@ public class BaseOptionsGump : Gump
                 CaretIndex = SelectionEnd = GetIndexFromCoords(pos);
             }
 
-            private protected void DrawSelection(UltimaBatcher2D batcher, int x, int y)
+            private protected void DrawSelection(UltimaBatcher2D batcher, int x, int y, float depth)
             {
                 if (!AllowSelection)
                 {
@@ -1591,22 +1597,26 @@ public class BaseOptionsGump : Gump
                     Point size = GetCoordsForIndex(selectEnd);
                     size = new Point(size.X - start.X, _rendererText.Height);
 
-                    batcher.Draw(SolidColorTextureCache.GetTexture(SELECTION_COLOR), new Rectangle(x + start.X, y + start.Y, size.X, size.Y), hueVector);
+                    batcher.Draw(SolidColorTextureCache.GetTexture(SELECTION_COLOR), new Rectangle(x + start.X, y + start.Y, size.X, size.Y), hueVector, depth);
                 }
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
                 int slideX = x - GetXOffset();
 
-                if (batcher.ClipBegin(x, y, Width, Height))
+                float depth = layerDepth;
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    base.Draw(batcher, x, y);
-                    DrawSelection(batcher, slideX, y);
-                    _rendererText.Draw(batcher, slideX, y);
-                    DrawCaret(batcher, slideX, y);
-                    batcher.ClipEnd();
-                }
+                    if (batcher.ClipBegin(x, y, Width, Height))
+                    {
+                        DrawSelection(batcher, slideX, y, depth);
+                        _rendererText.Draw(batcher, slideX, y);
+                        DrawCaret(batcher, slideX, y);
+                        batcher.ClipEnd();
+                    }
+                    return true;
+                });
 
                 return true;
             }
@@ -1832,21 +1842,28 @@ public class BaseOptionsGump : Gump
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            if (IsSelected)
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
+                if (IsSelected)
+                {
+                    Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, Alpha);
 
-                batcher.Draw(Texture, new Vector2(x, y), new Rectangle(0, 0, Width, Height), hueVector);
-            }
+                    batcher.Draw(Texture, new Vector2(x, y), new Rectangle(0, 0, Width, Height), hueVector, depth);
+                }
 
-            if (DisplayBorder)
-            {
-                batcher.DrawRectangle(SolidColorTextureCache.GetTexture(Color.LightGray), x, y, Width, Height, ShaderHueTranslator.GetHueVector(0, false, Alpha));
-            }
+                if (DisplayBorder)
+                {
+                    batcher.DrawRectangle(SolidColorTextureCache.GetTexture(Color.LightGray), x, y, Width, Height, ShaderHueTranslator.GetHueVector(0, false, Alpha), depth);
+                }
 
-            return base.Draw(batcher, x, y);
+                return true;
+            });
+
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
         }
 
         public bool Search(string text) => TextLabel.Text.ToLower().Contains(text.ToLower());
@@ -1918,35 +1935,41 @@ public class BaseOptionsGump : Gump
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
             int sbar = 0, start = 0;
 
             if (_scrollBar != null)
             {
-                _scrollBar.Draw(batcher, x + _scrollBar.X, y + _scrollBar.Y);
+                _scrollBar.AddToRenderLists(renderLists, x + _scrollBar.X, y + _scrollBar.Y, ref layerDepth);
                 sbar = _scrollBar.Width;
                 start = 1;
             }
 
-            if (batcher.ClipBegin(x, y, Width - sbar, Height))
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                for (int i = start; i < Children.Count; i++)
+                if (batcher.ClipBegin(x, y, Width - sbar, Height))
                 {
-                    Control child = Children[i];
-
-                    if (!child.IsVisible || (child.Page != ActivePage && child.Page != 0))
+                    float refDepth = depth;
+                    for (int i = start; i < Children.Count; i++)
                     {
-                        continue;
+                        Control child = Children[i];
+
+                        if (!child.IsVisible || (child.Page != ActivePage && child.Page != 0))
+                        {
+                            continue;
+                        }
+
+                        int finalY = y + child.Y - (_scrollBar == null ? 0 : _scrollBar.Value);
+
+                        child.AddToRenderLists(renderLists, x + child.X, finalY, ref refDepth);
                     }
-
-                    int finalY = y + child.Y - (_scrollBar == null ? 0 : _scrollBar.Value);
-
-                    child.Draw(batcher, x + child.X, finalY);
+                    batcher.ClipEnd();
                 }
-
-                batcher.ClipEnd();
-            }
+                return true;
+            });
 
             return true;
         }
@@ -2064,24 +2087,30 @@ public class BaseOptionsGump : Gump
                 _emptySpace.Height = Height;
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
                 if (Height <= 0 || !IsVisible || IsDisposed)
                 {
                     return false;
                 }
 
-                // draw scrollbar background
-                batcher.Draw(_whiteTexture, new Rectangle(x, y, Width, Height), _hueVector);
+                float depth = layerDepth;
 
-
-                // draw slider
-                if (MaxValue > MinValue)
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    batcher.Draw(_whiteTexture, new Rectangle(x, y + _sliderPosition, Width, 20), _hueVectorForeground);
-                }
+                    // draw scrollbar background
+                    batcher.Draw(_whiteTexture, new Rectangle(x, y, Width, Height), _hueVector, depth);
 
-                return true; // base.Draw(batcher, x, y);
+                    // draw slider
+                    if (MaxValue > MinValue)
+                    {
+                        batcher.Draw(_whiteTexture, new Rectangle(x, y + _sliderPosition, Width, 20), _hueVectorForeground, depth);
+                    }
+
+                    return true;
+                });
+
+                return true;
             }
 
             protected override int GetScrollableArea() => Height - _rectSlider.Height;
@@ -2675,29 +2704,37 @@ public class BaseOptionsGump : Gump
 
         public Action<bool> ValueChanged { get; }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
             if (IsDisposed)
             {
                 return false;
             }
 
-            batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(x, y, ThemeSettings.CHECKBOX_SIZE, ThemeSettings.CHECKBOX_SIZE), hueVector);
+            float depth = layerDepth;
 
-            if (IsChecked)
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                batcher.Draw
-                (
-                    SolidColorTextureCache.GetTexture(Color.Black),
-                    new Rectangle
-                        (x + (ThemeSettings.CHECKBOX_SIZE / 2) / 2, y + (ThemeSettings.CHECKBOX_SIZE / 2) / 2, ThemeSettings.CHECKBOX_SIZE / 2, ThemeSettings.CHECKBOX_SIZE / 2),
-                    hueVector
-                );
-            }
+                batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(x, y, ThemeSettings.CHECKBOX_SIZE, ThemeSettings.CHECKBOX_SIZE), hueVector, depth);
 
-            _text.Draw(batcher, x + _text.X, y + _text.Y);
+                if (IsChecked)
+                {
+                    batcher.Draw
+                    (
+                        SolidColorTextureCache.GetTexture(Color.Black),
+                        new Rectangle
+                            (x + (ThemeSettings.CHECKBOX_SIZE / 2) / 2, y + (ThemeSettings.CHECKBOX_SIZE / 2) / 2, ThemeSettings.CHECKBOX_SIZE / 2, ThemeSettings.CHECKBOX_SIZE / 2),
+                        hueVector,
+                        depth
+                    );
+                }
 
-            return base.Draw(batcher, x, y);
+                _text.Draw(batcher, x + _text.X, y + _text.Y);
+
+                return true;
+            });
+
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
         }
 
         protected virtual void OnCheckedChanged() => ValueChanged?.Invoke(IsChecked);
@@ -2870,22 +2907,29 @@ public class BaseOptionsGump : Gump
                 }
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
-                Vector3 hueVector = ShaderHueTranslator.GetHueVector(ThemeSettings.BACKGROUND);
+                float depth = layerDepth;
 
-                int mx = x;
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    Vector3 hueVector = ShaderHueTranslator.GetHueVector(ThemeSettings.BACKGROUND);
 
-                //Draw background line
-                batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(mx, y + 3, BarWidth, 10), hueVector);
+                    int mx = x;
 
-                hueVector = ShaderHueTranslator.GetHueVector(ThemeSettings.SEARCH_BACKGROUND);
+                    //Draw background line
+                    batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(mx, y + 3, BarWidth, 10), hueVector, depth);
 
-                batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(mx + _sliderX, y, 15, 16), hueVector);
+                    hueVector = ShaderHueTranslator.GetHueVector(ThemeSettings.SEARCH_BACKGROUND);
 
-                _text?.Draw(batcher, mx + BarWidth + 2, y + (Height >> 1) - (_text.Height >> 1));
+                    batcher.Draw(SolidColorTextureCache.GetTexture(Color.White), new Rectangle(mx + _sliderX, y, 15, 16), hueVector, depth);
 
-                return base.Draw(batcher, x, y);
+                    _text?.Draw(batcher, mx + BarWidth + 2, y + (Height >> 1) - (_text.Height >> 1));
+
+                    return true;
+                });
+
+                return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
             }
 
             protected override void OnMouseDown(int x, int y, MouseButtonType button)

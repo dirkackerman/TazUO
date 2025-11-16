@@ -42,19 +42,4 @@ public class Area : Control
 
         return true;
     }
-
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-    {
-        base.Draw(batcher, x, y);
-
-        if (drawBorder)
-            batcher.DrawRectangle(
-                SolidColorTextureCache.GetTexture(Color.Gray),
-                x, y,
-                Width-1,
-                Height-1,
-                ShaderHueTranslator.GetHueVector(hue)
-            );
-        return true;
-    }
 }

@@ -150,8 +150,6 @@ namespace ClassicUO.Game.UI.Gumps
 
         public override GumpType GumpType => GumpType.Buff;
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y) => base.Draw(batcher, x, y);
-
         private static class BuffBarManager
         {
             public const int MAX_COOLDOWN_BARS = 20;

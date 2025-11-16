@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using ClassicUO.Assets;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
@@ -330,17 +331,25 @@ namespace ClassicUO.Game.UI.Gumps
         }
 
         private Vector3 borderVec = new Vector3(1, 0, 1);
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            if (!base.Draw(batcher, x, y))
+            if (!base.AddToRenderLists(renderLists, x, y, ref layerDepth))
                 return false;
 
-            batcher.DrawRectangle(
-                SolidColorTextureCache.GetTexture(Color.OrangeRed),
-                x - 1, y - 1,
-                Width + 2, Height + 2,
-                borderVec
-            );
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.DrawRectangle(
+                    SolidColorTextureCache.GetTexture(Color.OrangeRed),
+                    x - 1, y - 1,
+                    Width + 2, Height + 2,
+                    borderVec,
+                    depth
+                );
+
+                return true;
+            });
 
             return true;
         }

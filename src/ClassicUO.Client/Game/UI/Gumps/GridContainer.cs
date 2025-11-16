@@ -826,11 +826,18 @@ namespace ClassicUO.Game.UI.Gumps
             scrollArea.Height = adjustedHeight - TOP_BAR_HEIGHT;
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
             if (CUOEnviroment.Debug)
-                batcher.DrawString(Renderer.Fonts.Bold, LocalSerial.ToString(), x, y - 40, ShaderHueTranslator.GetHueVector(32));
-            return base.Draw(batcher, x, y);
+            {
+                float depth = layerDepth;
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    batcher.DrawString(Renderer.Fonts.Bold, LocalSerial.ToString(), new Vector2(x, y - 40), ShaderHueTranslator.GetHueVector(32), depth);
+                    return true;
+                });
+            }
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
         }
 
         public enum GridSortMode
@@ -1216,7 +1223,7 @@ namespace ClassicUO.Game.UI.Gumps
             private static Vector3 _borderHueVec;
             private bool _shouldDraw;
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
                 if (!_shouldDraw || IsDisposed) return false;
 
@@ -1281,151 +1288,165 @@ namespace ClassicUO.Game.UI.Gumps
                     if (!MultiItemMoveGump.IsSelected(_item.Serial))
                         _selectHighlight = false;
 
-                base.Draw(batcher, x, y);
+                base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
-                Vector3 hueVector = _borderHueVec;
+                float depth = layerDepth;
 
-                if (_hasItem)
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    if (ItemGridLocked)
-                        hueVector = ShaderHueTranslator.GetHueVector(0x2, false, (float)_profile.GridBorderAlpha / 100);
+                    Vector3 hueVector = _borderHueVec;
 
-                    if (Highlight || _selectHighlight)
-                        hueVector = _highLightHue;
-                }
+                    if (_hasItem)
+                    {
+                        if (ItemGridLocked)
+                            hueVector = ShaderHueTranslator.GetHueVector(0x2, false, (float)_profile.GridBorderAlpha / 100);
 
-                batcher.DrawRectangle
-                (
-                    _whiteTexture,
-                    x,
-                    y,
-                    Width,
-                    Height,
-                    hueVector
-                );
+                        if (Highlight || _selectHighlight)
+                            hueVector = _highLightHue;
+                    }
 
-                if (!_hasItem) return true;
+                    batcher.DrawRectangle
+                    (
+                        _whiteTexture,
+                        x,
+                        y,
+                        Width,
+                        Height,
+                        hueVector,
+                        depth
+                    );
 
-                if (_item.MatchesHighlightData)
-                {
-                    int bx = x + 6;
-                    int by = y + 6;
-                    int bsize = _profile.GridHighlightSize;
+                    if (!_hasItem) return true;
+
+                    if (_item.MatchesHighlightData)
+                    {
+                        int bx = x + 6;
+                        int by = y + 6;
+                        int bsize = _profile.GridHighlightSize;
 
 
-                    Texture2D borderTexture = SolidColorTextureCache.GetTexture(_item.HighlightColor);
-                    var borderHueVec = new Vector3(1, 0, 1);
+                        Texture2D borderTexture = SolidColorTextureCache.GetTexture(_item.HighlightColor);
+                        var borderHueVec = new Vector3(1, 0, 1);
 
-                    batcher.Draw( //Top bar
-                        borderTexture,
-                        new Rectangle(bx, by, Width - 12, bsize),
-                        borderHueVec
+                        batcher.Draw( //Top bar
+                            borderTexture,
+                            new Rectangle(bx, by, Width - 12, bsize),
+                            borderHueVec,
+                            depth
+                            );
+
+                        batcher.Draw( //Left Bar
+                            borderTexture,
+                            new Rectangle(bx, by + bsize, bsize, Height - 12 - (bsize * 2)),
+                            borderHueVec,
+                            depth
+                            );
+
+                        batcher.Draw( //Right Bar
+                            borderTexture,
+                            new Rectangle(bx + Width - 12 - bsize, by + bsize, bsize, Height - 12 - (bsize * 2)),
+                            borderHueVec,
+                            depth
+                            );
+
+                        batcher.Draw( //Bottom bar
+                            borderTexture,
+                            new Rectangle(bx, by + Height - 12 - bsize, Width - 12, bsize),
+                            borderHueVec,
+                            depth
+                            );
+                    }
+
+                    if (MouseIsOver)
+                    {
+                        hueVector.Z = 0.3f;
+
+                        batcher.Draw
+                        (
+                            _whiteTexture,
+                            new Rectangle
+                            (
+                                x + 1,
+                                y,
+                                Width - 1,
+                                Height
+                            ),
+                            hueVector,
+                            depth
                         );
+                    }
 
-                    batcher.Draw( //Left Bar
-                        borderTexture,
-                        new Rectangle(bx, by + bsize, bsize, Height - 12 - (bsize * 2)),
-                        borderHueVec
-                        );
+                    if (_texture == null) return true;
 
-                    batcher.Draw( //Right Bar
-                        borderTexture,
-                        new Rectangle(bx + Width - 12 - bsize, by + bsize, bsize, Height - 12 - (bsize * 2)),
-                        borderHueVec
-                        );
+                    hueVector = ShaderHueTranslator.GetHueVector(_item.Hue, _item.ItemData.IsPartialHue, 1f);
 
-                    batcher.Draw( //Bottom bar
-                        borderTexture,
-                        new Rectangle(bx, by + Height - 12 - bsize, Width - 12, bsize),
-                        borderHueVec
-                        );
-                }
+                    Point originalSize = new(Width, Height);
+                    Point point = new();
+                    float scale = (_profile.GridContainersScale / 100f);
+                    bool scaleItems = _profile.GridContainerScaleItems;
 
-                if (MouseIsOver)
-                {
-                    hueVector.Z = 0.3f;
+                    if (_rect.Width < Width)
+                    {
+                        if (scaleItems)
+                            originalSize.X = (ushort)(_rect.Width * scale);
+                        else
+                            originalSize.X = _rect.Width;
+
+                        point.X = (Width >> 1) - (originalSize.X >> 1);
+                    }
+                    else if (_rect.Width > Width)
+                    {
+                        if (scaleItems)
+                            originalSize.X = (ushort)(Width * scale);
+                        else
+                            originalSize.X = Width;
+                        point.X = (Width >> 1) - (originalSize.X >> 1);
+                    }
+
+                    if (_rect.Height < Height)
+                    {
+                        if (scaleItems)
+                            originalSize.Y = (ushort)(_rect.Height * scale);
+                        else
+                            originalSize.Y = _rect.Height;
+
+                        point.Y = (Height >> 1) - (originalSize.Y >> 1);
+                    }
+                    else if (_rect.Height > Height)
+                    {
+                        if (scaleItems)
+                            originalSize.Y = (ushort)(Height * scale);
+                        else
+                            originalSize.Y = Height;
+
+                        point.Y = (Height >> 1) - (originalSize.Y >> 1);
+                    }
 
                     batcher.Draw
                     (
-                        _whiteTexture,
+                        _texture,
                         new Rectangle
                         (
-                            x + 1,
-                            y,
-                            Width - 1,
-                            Height
+                            x + point.X,
+                            y + point.Y,
+                            originalSize.X,
+                            originalSize.Y
                         ),
-                        hueVector
+                        new Rectangle
+                        (
+                            _bounds.X + _rect.X,
+                            _bounds.Y + _rect.Y,
+                            _rect.Width,
+                            _rect.Height
+                        ),
+                        hueVector,
+                        depth
                     );
-                }
 
-                if (_texture == null) return true;
+                    _count?.AddToRenderLists(renderLists, x + _count.X, y + _count.Y, ref depth);
 
-                hueVector = ShaderHueTranslator.GetHueVector(_item.Hue, _item.ItemData.IsPartialHue, 1f);
-
-                Point originalSize = new(Width, Height);
-                Point point = new();
-                float scale = (_profile.GridContainersScale / 100f);
-                bool scaleItems = _profile.GridContainerScaleItems;
-
-                if (_rect.Width < Width)
-                {
-                    if (scaleItems)
-                        originalSize.X = (ushort)(_rect.Width * scale);
-                    else
-                        originalSize.X = _rect.Width;
-
-                    point.X = (Width >> 1) - (originalSize.X >> 1);
-                }
-                else if (_rect.Width > Width)
-                {
-                    if (scaleItems)
-                        originalSize.X = (ushort)(Width * scale);
-                    else
-                        originalSize.X = Width;
-                    point.X = (Width >> 1) - (originalSize.X >> 1);
-                }
-
-                if (_rect.Height < Height)
-                {
-                    if (scaleItems)
-                        originalSize.Y = (ushort)(_rect.Height * scale);
-                    else
-                        originalSize.Y = _rect.Height;
-
-                    point.Y = (Height >> 1) - (originalSize.Y >> 1);
-                }
-                else if (_rect.Height > Height)
-                {
-                    if (scaleItems)
-                        originalSize.Y = (ushort)(Height * scale);
-                    else
-                        originalSize.Y = Height;
-
-                    point.Y = (Height >> 1) - (originalSize.Y >> 1);
-                }
-
-                batcher.Draw
-                (
-                    _texture,
-                    new Rectangle
-                    (
-                        x + point.X,
-                        y + point.Y,
-                        originalSize.X,
-                        originalSize.Y
-                    ),
-                    new Rectangle
-                    (
-                        _bounds.X + _rect.X,
-                        _bounds.Y + _rect.Y,
-                        _rect.Width,
-                        _rect.Height
-                    ),
-                    hueVector
-                );
-
-                _count?.Draw(batcher, x + _count.X, y + _count.Y);
+                    return true;
+                });
 
                 return true;
             }
@@ -1593,7 +1614,7 @@ namespace ClassicUO.Game.UI.Gumps
                 // Second pass: Fill remaining empty slots with items that don't have saved positions
                 // This includes new items or items being auto-sorted
                 foreach (Item i in filteredItems)
-                {                    
+                {
                     foreach (KeyValuePair<int, GridItem> slot in gridSlots)
                     {
                         // Skip slots that already have items
@@ -1887,28 +1908,32 @@ namespace ClassicUO.Game.UI.Gumps
                 }
             }
 
-            public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+            public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
             {
-                _scrollBar.Draw(batcher, x + _scrollBar.X, y + _scrollBar.Y);
+                _scrollBar.AddToRenderLists(renderLists, x + _scrollBar.X, y + _scrollBar.Y, ref layerDepth);
 
-                if (batcher.ClipBegin(x + ScissorRectangle.X, y + ScissorRectangle.Y, Width - 14 + ScissorRectangle.Width, Height + ScissorRectangle.Height))
+                float depth = layerDepth;
+                renderLists.AddGumpNoAtlas(batcher =>
                 {
-                    for (int i = 1; i < Children.Count; i++)
+                    if (batcher.ClipBegin(x + ScissorRectangle.X, y + ScissorRectangle.Y, Width - 14 + ScissorRectangle.Width, Height + ScissorRectangle.Height))
                     {
-                        Control child = Children[i];
-
-                        if (!child.IsVisible)
+                        for (int i = 1; i < Children.Count; i++)
                         {
-                            continue;
+                            Control child = Children[i];
+
+                            if (!child.IsVisible)
+                            {
+                                continue;
+                            }
+
+                            int finalY = y + child.Y - _scrollBar.Value + ScissorRectangle.Y;
+
+                            child.AddToRenderLists(renderLists, x + child.X, finalY, ref depth);
                         }
-
-                        int finalY = y + child.Y - _scrollBar.Value + ScissorRectangle.Y;
-
-                        child.Draw(batcher, x + child.X, finalY);
+                        batcher.ClipEnd();
                     }
-
-                    batcher.ClipEnd();
-                }
+                    return true;
+                });
 
                 return true;
             }

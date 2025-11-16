@@ -322,21 +322,29 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
+            float depth = layerDepth;
 
-            batcher.DrawRectangle
-            (
-                SolidColorTextureCache.GetTexture(Color.Gray),
-                x,
-                y,
-                Width,
-                Height,
-                hueVector
-            );
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                Vector3 hueVector = ShaderHueTranslator.GetHueVector(0);
 
-            return base.Draw(batcher, x, y);
+                batcher.DrawRectangle
+                (
+                    SolidColorTextureCache.GetTexture(Color.Gray),
+                    x,
+                    y,
+                    Width,
+                    Height,
+                    hueVector,
+                    depth
+                );
+
+                return true;
+            });
+
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
         }
     }
 }

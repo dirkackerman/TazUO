@@ -102,13 +102,14 @@ namespace ClassicUO.Renderer
                 _gameWindowOnScreen.Width,
                 _gameWindowOnScreen.Height
             );
-            batcher.DrawTiled(
-                _background,
-                rect,
-                _background.Bounds,
-                new Vector3(0, 0, 0.1f),
-                0f
-            );
+            if(_background != null)
+                batcher.DrawTiled(
+                    _background,
+                    rect,
+                    _background.Bounds,
+                    new Vector3(0, 0, 0.1f),
+                    0f
+                );
 
             batcher.SetSampler(_defaultSamplerState);
 

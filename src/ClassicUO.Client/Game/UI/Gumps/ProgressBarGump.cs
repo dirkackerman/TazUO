@@ -1,4 +1,5 @@
 ﻿using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
@@ -30,21 +31,28 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            if (!base.Draw(batcher, x, y))
+            if (!base.AddToRenderLists(renderLists, x, y, ref layerDepth))
                 return false;
 
-            batcher.Draw(
-                SolidColorTextureCache.GetTexture(ForegrouneColor),
-                new Rectangle
-                (
-                    x,
-                    y,
-                    (int)(CurrentPercentage * Width),
-                    Height
-                ),
-                hueVector);
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw(
+                    SolidColorTextureCache.GetTexture(ForegrouneColor),
+                    new Rectangle
+                    (
+                        x,
+                        y,
+                        (int)(CurrentPercentage * Width),
+                        Height
+                    ),
+                    hueVector,
+                    depth);
+                return true;
+            });
 
             return true;
         }

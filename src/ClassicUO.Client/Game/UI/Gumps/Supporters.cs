@@ -4,6 +4,7 @@ using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.IO;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Gumps
 {
@@ -70,16 +71,22 @@ namespace ClassicUO.Game.UI.Gumps
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
+            float depth = layerDepth;
+
             if (image != null)
-            {
-                batcher.Draw(
-                    image,
-                    new Rectangle(x, y, image.Bounds.Width, image.Bounds.Height),
-                    new Vector3(0, 0, 1)
-                    );
-            }
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                        batcher.Draw(
+                            image,
+                            new Rectangle(x, y, image.Bounds.Width, image.Bounds.Height),
+                            new Vector3(0, 0, 1),
+                            depth
+                            );
+
+                    return true;
+                });
 
             offset += 0.9;
 
@@ -106,16 +113,24 @@ namespace ClassicUO.Game.UI.Gumps
                 offset = 0;
 
             Vector3 hue = ShaderHueTranslator.GetHueVector(0);
-            batcher.DrawRectangle
-            (
-                SolidColorTextureCache.GetTexture(Color.Gray),
-                x,
-                y,
-                Width - 3,
-                Height + 1,
-                hue
-            );
-            return base.Draw(batcher, x, y);
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.DrawRectangle
+                (
+                    SolidColorTextureCache.GetTexture(Color.Gray),
+                    x,
+                    y,
+                    Width - 3,
+                    Height + 1,
+                    hue,
+                    depth
+                );
+
+                return true;
+            });
+
+            return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
         }
     }
 }

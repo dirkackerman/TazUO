@@ -3,6 +3,7 @@ using System.Linq;
 using ClassicUO.Configuration;
 using ClassicUO.Game.GameObjects;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Game.UI.Controls;
 using ClassicUO.Game.UI.Gumps;
 using ClassicUO.Game.UI.Gumps.GridHighLight;
@@ -468,13 +469,13 @@ namespace ClassicUO.Game.UI
             MoveItemQueue.Instance?.EnqueueQuick(currentItem); //Directly use move item queue instead of autoloot
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(currentItem.Hue, currentItem.ItemData.IsPartialHue, 1, true);
 
-            ref readonly SpriteInfo texture = ref Client.Game.UO.Arts.GetArt((uint)currentItem.DisplayedGraphic);
+            SpriteInfo texture = Client.Game.UO.Arts.GetArt((uint)currentItem.DisplayedGraphic);
             Rectangle _rect = Client.Game.UO.Arts.GetRealArtBounds((uint)currentItem.DisplayedGraphic);
 
 
@@ -507,25 +508,32 @@ namespace ClassicUO.Game.UI
                     _point.Y = 0;
                 }
 
-                batcher.Draw
-                (
-                    texture.Texture,
-                    new Rectangle
+                float depth = layerDepth;
+
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    batcher.Draw
                     (
-                        x + _point.X,
-                        y + _point.Y,
-                        _originalSize.X,
-                        _originalSize.Y
-                    ),
-                    new Rectangle
-                    (
-                        texture.UV.X + _rect.X,
-                        texture.UV.Y + _rect.Y,
-                        _rect.Width,
-                        _rect.Height
-                    ),
-                    hueVector
-                );
+                        texture.Texture,
+                        new Rectangle
+                        (
+                            x + _point.X,
+                            y + _point.Y,
+                            _originalSize.X,
+                            _originalSize.Y
+                        ),
+                        new Rectangle
+                        (
+                            texture.UV.X + _rect.X,
+                            texture.UV.Y + _rect.Y,
+                            _rect.Width,
+                            _rect.Height
+                        ),
+                        hueVector,
+                        depth
+                    );
+                    return true;
+                });
             }
 
             if (currentItem != null && currentItem.MatchesHighlightData)
@@ -536,29 +544,40 @@ namespace ClassicUO.Game.UI
                 var borderHueVec = new Vector3(1, 0, 1);
                 Texture2D borderTexture = SolidColorTextureCache.GetTexture(currentItem.HighlightColor);
 
-                batcher.Draw( //Top bar
-                    borderTexture,
-                    new Rectangle(bx, by, ITEM_SIZE - 12, 1),
-                    borderHueVec
-                    );
+                float depth = layerDepth;
 
-                batcher.Draw( //Left Bar
-                    borderTexture,
-                    new Rectangle(bx, by + 1, 1, ITEM_SIZE - 10),
-                    borderHueVec
-                    );
+                renderLists.AddGumpNoAtlas(batcher =>
+                {
+                    batcher.Draw( //Top bar
+                        borderTexture,
+                        new Rectangle(bx, by, ITEM_SIZE - 12, 1),
+                        borderHueVec,
+                        depth
+                        );
 
-                batcher.Draw( //Right Bar
-                    borderTexture,
-                    new Rectangle(bx + ITEM_SIZE - 12 - 1, by + 1, 1, ITEM_SIZE - 10),
-                    borderHueVec
-                    );
+                    batcher.Draw( //Left Bar
+                        borderTexture,
+                        new Rectangle(bx, by + 1, 1, ITEM_SIZE - 10),
+                        borderHueVec,
+                        depth
+                        );
 
-                batcher.Draw( //Bottom bar
-                    borderTexture,
-                    new Rectangle(bx, by + ITEM_SIZE - 11, ITEM_SIZE - 12, 1),
-                    borderHueVec
-                    );
+                    batcher.Draw( //Right Bar
+                        borderTexture,
+                        new Rectangle(bx + ITEM_SIZE - 12 - 1, by + 1, 1, ITEM_SIZE - 10),
+                        borderHueVec,
+                        depth
+                        );
+
+                    batcher.Draw( //Bottom bar
+                        borderTexture,
+                        new Rectangle(bx, by + ITEM_SIZE - 11, ITEM_SIZE - 12, 1),
+                        borderHueVec,
+                        depth
+                        );
+
+                    return true;
+                });
             }
 
             return true;

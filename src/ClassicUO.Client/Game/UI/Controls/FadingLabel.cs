@@ -1,4 +1,5 @@
 ﻿using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 
@@ -14,7 +15,7 @@ public class FadingLabel : Label
         this.tickSpeed = tickSpeed;
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (c >= tickSpeed)
             Alpha -= 0.01f;
@@ -22,11 +23,18 @@ public class FadingLabel : Label
             Dispose();
         c++;
 
-        batcher.Draw(SolidColorTextureCache.GetTexture(Color.Green),
-            new Rectangle(x, y, Width, Height),
-            new Vector3(1, 0, Alpha)
-        );
+        float depth = layerDepth;
 
-        return base.Draw(batcher, x, y);
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            batcher.Draw(SolidColorTextureCache.GetTexture(Color.Green),
+                new Rectangle(x, y, Width, Height),
+                new Vector3(1, 0, Alpha),
+                depth
+            );
+            return true;
+        });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 }

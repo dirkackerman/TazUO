@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using ClassicUO.Game.Data;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.Managers.SpellVisualRange;
 
@@ -64,7 +65,7 @@ public class CastTimerProgressBar : Gump
             IsVisible = true;
         });
 
-    private void DrawProgressBar(UltimaBatcher2D batcher, int x, int y, double percent, Vector3 fillHue)
+    private void DrawProgressBar(UltimaBatcher2D batcher, int x, int y, double percent, Vector3 fillHue, float depth)
     {
         Mobile m = World.Player;
         Client.Game.UO.Animations.GetAnimationDimensions(
@@ -83,7 +84,7 @@ public class CastTimerProgressBar : Gump
         if (background == null || foreground == null)
             return;
 
-        batcher.Draw(background, new Rectangle(x, y, barBounds.Width, barBounds.Height), barBounds, EmptyHue);
+        batcher.Draw(background, new Rectangle(x, y, barBounds.Width, barBounds.Height), barBounds, EmptyHue, depth);
 
         int widthFromPercent = (int)(barBounds.Width * percent);
         if (widthFromPercent > 0)
@@ -92,12 +93,13 @@ public class CastTimerProgressBar : Gump
                 foreground,
                 new Rectangle(x, y, widthFromPercent, barBoundsF.Height),
                 barBoundsF,
-                fillHue
+                fillHue,
+                depth
             );
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (World?.Player == null || SpellVisualRangeManager.Instance == null)
         {
@@ -130,8 +132,15 @@ public class CastTimerProgressBar : Gump
         }
         IsVisible = true;
         Vector3 drawHue = inCastingPhase ? CastingHue : RecoveryHue;
-        DrawProgressBar(batcher, x, y, percent, drawHue);
 
-        return base.Draw(batcher, x, y);
+        float depth = layerDepth;
+
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            DrawProgressBar(batcher, x, y, percent, drawHue, depth);
+            return true;
+        });
+
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 }

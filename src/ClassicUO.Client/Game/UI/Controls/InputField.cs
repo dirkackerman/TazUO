@@ -1,4 +1,5 @@
 using System;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 
 namespace ClassicUO.Game.UI.Controls;
@@ -53,14 +54,20 @@ public class InputField : Control
         Add(_textbox);
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        if (batcher.ClipBegin(x, y, Width, Height))
+        float depth = layerDepth;
+        renderLists.AddGumpNoAtlas(batcher =>
         {
-            base.Draw(batcher, x, y);
-
-            batcher.ClipEnd();
-        }
+            if (batcher.ClipBegin(x, y, Width, Height))
+            {
+                RenderLists childRenderLists = new();
+                base.AddToRenderLists(childRenderLists, x, y, ref depth);
+                childRenderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+                batcher.ClipEnd();
+            }
+            return true;
+        });
 
         return true;
     }

@@ -35,8 +35,10 @@ public sealed class AlphaBlendControl : Control
         hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha);
     }
 
-    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepthRef)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
+        float depth = layerDepth;
+
         renderLists.AddGumpNoAtlas(batcher =>
             {
                 batcher.Draw
@@ -49,7 +51,8 @@ public sealed class AlphaBlendControl : Control
                         Width,
                         Height
                     ),
-                    hueVector
+                    hueVector,
+                    depth
                 );
 
                 return true;

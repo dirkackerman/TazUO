@@ -1,3 +1,4 @@
+using ClassicUO.Game.Scenes;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -95,7 +96,7 @@ public class NineSliceControl : Control
     {
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (IsDisposed || _customTexture == null || _customTexture.IsDisposed)
         {
@@ -103,39 +104,44 @@ public class NineSliceControl : Control
         }
 
         Vector3 hueVector = ShaderHueTranslator.GetHueVector(Hue, false, Alpha, true);
+        float depth = layerDepth;
 
-        DrawNineSlice(batcher, x, y, hueVector);
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            DrawNineSlice(batcher, x, y, hueVector, depth);
+            return true;
+        });
 
-        return base.Draw(batcher, x, y);
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 
-    private void DrawNineSlice(UltimaBatcher2D batcher, int x, int y, Vector3 hueVector)
+    private void DrawNineSlice(UltimaBatcher2D batcher, int x, int y, Vector3 hueVector, float depth)
     {
         // Top row
-        batcher.Draw(_customTexture, new Rectangle(x, y, _borderSize, _borderSize), _slices[0], hueVector); // Top-left
+        batcher.Draw(_customTexture, new Rectangle(x, y, _borderSize, _borderSize), _slices[0], hueVector, depth); // Top-left
         batcher.Draw(_customTexture, new Rectangle(x + _borderSize, y, Width - _borderSize * 2, _borderSize),
-            _slices[1], hueVector); // Top-center
+            _slices[1], hueVector, depth); // Top-center
         batcher.Draw(_customTexture, new Rectangle(x + Width - _borderSize, y, _borderSize, _borderSize), _slices[2],
-            hueVector); // Top-right
+            hueVector, depth); // Top-right
 
         // Middle row
         batcher.Draw(_customTexture, new Rectangle(x, y + _borderSize, _borderSize, Height - _borderSize * 2),
-            _slices[3], hueVector); // Middle-left
+            _slices[3], hueVector, depth); // Middle-left
         batcher.Draw(_customTexture,
             new Rectangle(x + _borderSize, y + _borderSize, Width - _borderSize * 2, Height - _borderSize * 2),
-            _slices[4], hueVector); // Middle-center
+            _slices[4], hueVector, depth); // Middle-center
         batcher.Draw(_customTexture,
             new Rectangle(x + Width - _borderSize, y + _borderSize, _borderSize, Height - _borderSize * 2), _slices[5],
-            hueVector); // Middle-right
+            hueVector, depth); // Middle-right
 
         // Bottom row
         batcher.Draw(_customTexture, new Rectangle(x, y + Height - _borderSize, _borderSize, _borderSize), _slices[6],
-            hueVector); // Bottom-left
+            hueVector, depth); // Bottom-left
         batcher.Draw(_customTexture,
             new Rectangle(x + _borderSize, y + Height - _borderSize, Width - _borderSize * 2, _borderSize), _slices[7],
-            hueVector); // Bottom-center
+            hueVector, depth); // Bottom-center
         batcher.Draw(_customTexture,
             new Rectangle(x + Width - _borderSize, y + Height - _borderSize, _borderSize, _borderSize), _slices[8],
-            hueVector); // Bottom-right
+            hueVector, depth); // Bottom-right
     }
 }

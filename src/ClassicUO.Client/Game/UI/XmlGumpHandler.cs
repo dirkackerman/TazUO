@@ -1133,14 +1133,14 @@ namespace ClassicUO.Game.UI
             }
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
-            base.Draw(batcher, x, y);
+            base.AddToRenderLists(renderLists, x, y, ref layerDepth);
 
-            color_background?.Draw(batcher, x, y);
-            color_foreground?.Draw(batcher, x, y + color_foreground.Y);
-            image_background?.Draw(batcher, x, y);
-            image_foreground?.Draw(batcher, x, y + image_foreground.Y);
+            color_background?.AddToRenderLists(renderLists, x, y, ref layerDepth);
+            color_foreground?.AddToRenderLists(renderLists, x, y + color_foreground.Y, ref layerDepth);
+            image_background?.AddToRenderLists(renderLists, x, y, ref layerDepth);
+            image_foreground?.AddToRenderLists(renderLists, x, y + image_foreground.Y, ref layerDepth);
 
             return true;
         }

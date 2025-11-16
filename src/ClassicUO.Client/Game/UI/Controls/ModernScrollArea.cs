@@ -2,6 +2,7 @@ using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
 using System;
+using ClassicUO.Game.Scenes;
 
 namespace ClassicUO.Game.UI.Controls;
 
@@ -143,34 +144,45 @@ public class ModernScrollArea : Control
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
         if (IsDisposed)
             return false;
 
-        _scrollBar.Draw(batcher, x + _scrollBar.X, y + _scrollBar.Y);
+        _scrollBar.AddToRenderLists(renderLists, x + _scrollBar.X, y + _scrollBar.Y, ref layerDepth);
 
         int contentWidth = Width - (_scrollBar.IsVisible ? SCROLLBAR_WIDTH : 0);
 
-        if (batcher.ClipBegin(
+        float depth = layerDepth;
+
+        renderLists.AddGumpNoAtlas(batcher =>
+        {
+            if (batcher.ClipBegin(
                 x + ScissorRectangle.X,
                 y + ScissorRectangle.Y,
                 contentWidth + ScissorRectangle.Width,
                 Height + ScissorRectangle.Height))
-        {
-            for (int i = 0; i < Children.Count; i++)
             {
-                Control child = Children[i];
+                float refdepth = depth;
 
-                if (child == _scrollBar || !child.IsVisible)
-                    continue;
+                RenderLists childRenderLists = new();
 
-                int finalY = y + child.Y - _scrollBar.Value + ScissorRectangle.Y;
-                child.Draw(batcher, x + child.X, finalY);
+                for (int i = 0; i < Children.Count; i++)
+                {
+                    Control child = Children[i];
+
+                    if (child == _scrollBar || !child.IsVisible)
+                        continue;
+
+                    int finalY = y + child.Y - _scrollBar.Value + ScissorRectangle.Y;
+                    child.AddToRenderLists(childRenderLists, x + child.X, finalY, ref refdepth);
+                }
+
+                childRenderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+                batcher.ClipEnd();
             }
-
-            batcher.ClipEnd();
-        }
+            return true;
+        });
 
         return true;
     }

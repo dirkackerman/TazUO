@@ -1,4 +1,5 @@
 ﻿using ClassicUO.Assets;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
 using Microsoft.Xna.Framework;
@@ -30,24 +31,31 @@ public class HttpClickableLink : Control
         }
     }
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
-    {           
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
+    {
         if (MouseIsOver)
         {
-            batcher.Draw
-            (
-                SolidColorTextureCache.GetTexture(Color.White),
-                new Rectangle
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
+            {
+                batcher.Draw
                 (
-                    x,
-                    y,
-                    Width,
-                    Height
-                ),
-                ShaderHueTranslator.GetHueVector(HighlightHue, false, 0.3f)
-            );
+                    SolidColorTextureCache.GetTexture(Color.White),
+                    new Rectangle
+                    (
+                        x,
+                        y,
+                        Width,
+                        Height
+                    ),
+                    ShaderHueTranslator.GetHueVector(HighlightHue, false, 0.3f),
+                    depth
+                );
+                return true;
+            });
         }
 
-        return base.Draw(batcher, x, y);;
+        return base.AddToRenderLists(renderLists, x, y, ref layerDepth);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using ClassicUO.Assets;
 using ClassicUO.Game.Managers;
+using ClassicUO.Game.Scenes;
 using ClassicUO.Input;
 using ClassicUO.Renderer;
 using ClassicUO.Utility;
@@ -54,14 +55,20 @@ public class TTFTextInputField : Control
 
     public void SetFocus() => TextBox.SetKeyboardFocus();
 
-    public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+    public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
     {
-        if (batcher.ClipBegin(x, y, Width, Height))
+        float depth = layerDepth;
+        renderLists.AddGumpNoAtlas(batcher =>
         {
-            base.Draw(batcher, x, y);
-
-            batcher.ClipEnd();
-        }
+            if (batcher.ClipBegin(x, y, Width, Height))
+            {
+                RenderLists childRenderLists = new();
+                base.AddToRenderLists(childRenderLists, x, y, ref depth);
+                childRenderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+                batcher.ClipEnd();
+            }
+            return true;
+        });
 
         return true;
     }
@@ -807,7 +814,7 @@ public class TTFTextInputField : Control
             CaretIndex = SelectionEnd = GetIndexFromCoords(pos);
         }
 
-        private protected void DrawSelection(UltimaBatcher2D batcher, int x, int y)
+        private protected void DrawSelection(UltimaBatcher2D batcher, int x, int y, float depth)
         {
             if (!AllowSelection)
             {
@@ -835,35 +842,35 @@ public class TTFTextInputField : Control
 
                     if (startline == line)
                     {
-                        DrawSectionOfSelection(batcher, x + start.X, y + start.Y, end.X - start.X, _rendererCaret.Height);
+                        DrawSectionOfSelection(batcher, x + start.X, y + start.Y, end.X - start.X, _rendererCaret.Height, depth);
                         return;
                     }
 
                     Point lineend = GetCoordsForIndex(_rendererText.RTL.Lines[startline].TextStartIndex + _rendererText.RTL.Lines[startline].Count - 1);
                     int w = lineend.X - start.X;
-                    DrawSectionOfSelection(batcher, x + start.X, y + start.Y, w < 0 ? -w : w, _rendererCaret.Height);
+                    DrawSectionOfSelection(batcher, x + start.X, y + start.Y, w < 0 ? -w : w, _rendererCaret.Height, depth);
 
                     for (int i = startline + 1; i < line; i++)
                     {
                         start = GetCoordsForIndex(_rendererText.RTL.Lines[i].TextStartIndex);
                         lineend = GetCoordsForIndex(_rendererText.RTL.Lines[i].Count - 1 + _rendererText.RTL.Lines[i].TextStartIndex);
-                        DrawSectionOfSelection(batcher, x + start.X, y + start.Y, lineend.X - start.X, _rendererCaret.Height);
+                        DrawSectionOfSelection(batcher, x + start.X, y + start.Y, lineend.X - start.X, _rendererCaret.Height, depth);
                     }
 
                     start = GetCoordsForIndex(_rendererText.RTL.Lines[line].TextStartIndex);
                     lineend = end;
 
-                    DrawSectionOfSelection(batcher, x + start.X, y + start.Y, lineend.X - start.X, _rendererCaret.Height);
+                    DrawSectionOfSelection(batcher, x + start.X, y + start.Y, lineend.X - start.X, _rendererCaret.Height, depth);
 
                 }
                 else
                 {
-                    DrawSectionOfSelection(batcher, x + start.X, y + start.Y, end.X - start.X, _rendererCaret.Height);
+                    DrawSectionOfSelection(batcher, x + start.X, y + start.Y, end.X - start.X, _rendererCaret.Height, depth);
                 }
             }
         }
 
-        private void DrawSectionOfSelection(UltimaBatcher2D batcher, int x, int y, int w, int h)
+        private void DrawSectionOfSelection(UltimaBatcher2D batcher, int x, int y, int w, int h, float depth)
         {
             Vector3 hueVector = ShaderHueTranslator.GetHueVector(0, false, 0.5f);
 
@@ -871,36 +878,46 @@ public class TTFTextInputField : Control
             (
                 SolidColorTextureCache.GetTexture(SELECTION_COLOR),
                 new Rectangle(x, y, w, h),
-                hueVector
+                hueVector,
+                depth
             );
         }
 
-        public override bool Draw(UltimaBatcher2D batcher, int x, int y)
+        public override bool AddToRenderLists(RenderLists renderLists, int x, int y, ref float layerDepth)
         {
             int slideX = x - GetXOffset();
 
-            if (batcher.ClipBegin(x, y, Width, Height))
+            float depth = layerDepth;
+
+            renderLists.AddGumpNoAtlas(batcher =>
             {
-                base.Draw(batcher, x, y);
-
-                if (!IsFocused && string.IsNullOrEmpty(_rendererText.Text) && _placeHolder != null)
+                if (batcher.ClipBegin(x, y, Width, Height))
                 {
-                    _placeHolder.Draw(batcher, slideX, y);
-                }
-                else
-                {
-                    DrawSelection(batcher, slideX, y);
-                    _rendererText.Draw(batcher, slideX, y);
-                    DrawCaret(batcher, slideX, y);
-                }
+                    float refDepth = depth;
+                    RenderLists childRenderLists = new();
+                    base.AddToRenderLists(childRenderLists, x, y, ref refDepth);
 
-                batcher.ClipEnd();
-            }
+                    if (!IsFocused && string.IsNullOrEmpty(_rendererText.Text) && _placeHolder != null)
+                    {
+                        _placeHolder.AddToRenderLists(childRenderLists, slideX, y, ref refDepth);
+                    }
+                    else
+                    {
+                        DrawSelection(batcher, slideX, y, refDepth);
+                        _rendererText.AddToRenderLists(childRenderLists, slideX, y, ref refDepth);
+                        DrawCaret(batcher, slideX, y, refDepth);
+                    }
+
+                    childRenderLists.DrawRenderLists(batcher, sbyte.MaxValue);
+                    batcher.ClipEnd();
+                }
+                return true;
+            });
 
             return true;
         }
 
-        protected virtual void DrawCaret(UltimaBatcher2D batcher, int x, int y)
+        protected virtual void DrawCaret(UltimaBatcher2D batcher, int x, int y, float depth)
         {
             if (HasKeyboardFocus)
             {
